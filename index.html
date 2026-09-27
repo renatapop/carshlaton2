@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Carshalton Departures</title>
+  <meta name="description" content="A tablet-friendly Carshalton departures board draft.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbfbfa'/%3E%3Cpath d='M17 16h30a5 5 0 0 1 5 5v19a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V21a5 5 0 0 1 5-5Z' fill='%23040457'/%3E%3Cpath d='M20 23h24v6H20zM20 34h13v5H20zM38 34h6v5h-6z' fill='%23fbfbfa'/%3E%3Cpath d='M22 48l-5 8M42 48l5 8' stroke='%23040457' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fbfbfa;
+      --panel: #ffffff;
+      --panel-soft: #f2f6f8;
+      --line: rgba(38, 62, 82, 0.1);
+      --text: #18212b;
+      --muted: #70808d;
+      --dim: #9ba6ad;
+      --blue: #040457;
+      --blue-strong: #040457;
+      --blue-soft: #8fb5c8;
+      --green: #3e8266;
+      --red: #b75b55;
+      --ink: #ffffff;
+      --radius: 8px;
+      --shadow: 0 18px 46px rgba(35, 54, 68, 0.11);
+      --display-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+      --body-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: linear-gradient(180deg, #ffffff 0%, #fbfbfa 44%, #f2f5f6 100%);
+      font-family: var(--body-font);
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: clamp(18px, 3vw, 34px);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: clamp(14px, 2vw, 22px);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 18px;
+    }
+
+    .station {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .rail-mark {
+      width: clamp(76px, 9vw, 92px);
+      height: clamp(76px, 9vw, 92px);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid rgba(49, 95, 125, 0.18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--blue);
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(35, 54, 68, 0.08);
+    }
+
+    .rail-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1.65rem, 4vw, 3.4rem);
+      line-height: 1;
+      font-weight: 560;
+      text-transform: none;
+    }
+
+    .code {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: clamp(0.85rem, 1.7vw, 1rem);
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .clock {
+      min-width: 128px;
+      text-align: right;
+    }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2.3rem, 7vw, 5.6rem);
+      line-height: 0.88;
+      font-weight: 620;
+    }
+
+    .date {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: clamp(0.82rem, 1.5vw, 1rem);
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+    }
+
+    .switcher button {
+      min-height: 52px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-size: clamp(0.95rem, 2vw, 1.08rem);
+      font-weight: 650;
+      text-transform: none;
+      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+
+    .switcher button:hover {
+      color: var(--text);
+      background: rgba(49, 95, 125, 0.07);
+    }
+
+    .switcher button[aria-selected="true"] {
+      color: var(--ink);
+      background: var(--blue);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: grid;
+      gap: clamp(14px, 2vw, 20px);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 2px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1rem, 2.2vw, 1.34rem);
+      font-weight: 520;
+      text-transform: none;
+    }
+
+    .updated {
+      color: var(--muted);
+      font-size: clamp(0.78rem, 1.6vw, 0.92rem);
+      font-weight: 600;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(12px, 2vw, 18px);
+    }
+
+    .route-card,
+    .return-card {
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow);
+    }
+
+    .route-card::before,
+    .return-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: var(--accent, var(--blue));
+    }
+
+    .card-main {
+      padding: clamp(16px, 3vw, 24px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .route-title {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .route-title h3 {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1.28rem, 3.4vw, 2.45rem);
+      line-height: 1.02;
+      font-weight: 560;
+      text-transform: none;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 650;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
+    .pill.good {
+      color: var(--green);
+      background: rgba(52, 125, 91, 0.1);
+    }
+
+    .pill.delay {
+      color: var(--red);
+      background: rgba(183, 91, 85, 0.1);
+    }
+
+    .pill.cancelled {
+      color: var(--red);
+      background: rgba(187, 77, 70, 0.1);
+    }
+
+    .primary-times {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .departure {
+      display: grid;
+      gap: 5px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: clamp(0.82rem, 1.5vw, 0.95rem);
+      font-weight: 620;
+      text-transform: none;
+    }
+
+    .big-time {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2.45rem, 7vw, 5.2rem);
+      line-height: 0.9;
+      font-weight: 620;
+    }
+
+    .leave-box {
+      width: 100%;
+      min-width: 0;
+      padding: 13px 14px;
+      border: 1px solid rgba(49, 95, 125, 0.16);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      text-align: left;
+    }
+
+    .leave-value {
+      color: var(--blue);
+      font-size: clamp(1.18rem, 3vw, 2rem);
+      line-height: 1.08;
+      font-weight: 650;
+    }
+
+    .leave-note {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 620;
+      text-transform: none;
+    }
+
+    .arrivals {
+      display: grid;
+      gap: 8px;
+    }
+
+    .arrival-row,
+    .return-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      background: #f7fafb;
+    }
+
+    .arrival-row span:first-child,
+    .return-row span:first-child {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #2a3440;
+      font-size: clamp(0.95rem, 1.8vw, 1.08rem);
+      font-weight: 600;
+    }
+
+    .arrival-time,
+    .return-time {
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .return-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(12px, 2vw, 18px);
+    }
+
+    .return-card {
+      min-height: 0;
+    }
+
+    .return-card .card-main {
+      gap: 18px;
+    }
+
+    .return-title {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .return-title h3 {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1.28rem, 3.4vw, 2.45rem);
+      line-height: 1.02;
+      font-weight: 560;
+      text-transform: none;
+    }
+
+    .return-route-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .return-station-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) auto auto auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 58px;
+      padding: 11px 12px;
+      border-radius: 6px;
+      background: #f7fafb;
+    }
+
+    .return-station {
+      min-width: 0;
+    }
+
+    .return-station strong,
+    .return-mini strong {
+      display: block;
+      color: var(--text);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .return-station strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .return-mini {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .return-mini.arrival-cell {
+      padding: 8px 10px;
+      border: 1px solid rgba(4, 4, 87, 0.12);
+      border-radius: 6px;
+      background: rgba(4, 4, 87, 0.045);
+    }
+
+    .return-mini.arrival-cell .mini-label,
+    .return-mini.arrival-cell strong {
+      color: var(--blue);
+    }
+
+    .mini-label {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 620;
+    }
+
+    .return-departure {
+      display: grid;
+      gap: 6px;
+      padding: 13px 0 2px;
+    }
+
+    .return-departure .big-time {
+      font-size: clamp(2rem, 5.4vw, 3.8rem);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+    }
+
+    .small-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: flex-start;
+      gap: 16px;
+      color: var(--dim);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    @media (max-width: 940px) {
+      .return-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        min-height: 100svh;
+        padding: 16px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .clock {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+        text-align: left;
+      }
+
+      .date {
+        margin-top: 0;
+        text-align: right;
+      }
+
+      .grid,
+      .return-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .primary-times {
+        grid-template-columns: 1fr;
+      }
+
+      .leave-box {
+        width: 100%;
+        text-align: left;
+      }
+
+      .footer {
+        flex-direction: column;
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .station {
+        align-items: start;
+      }
+
+      .rail-mark {
+        width: 68px;
+        height: 68px;
+      }
+
+      .route-title {
+        display: grid;
+      }
+
+      .return-title {
+        display: grid;
+      }
+
+      .return-station-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .return-station-row .pill {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      .section-head {
+        display: grid;
+        gap: 6px;
+      }
+
+      .clock {
+        display: grid;
+        justify-content: start;
+      }
+
+      .date {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="station">
+        <div class="rail-mark">
+          <img id="headerImage" src="https://as2.ftcdn.net/v2/jpg/01/12/07/01/1000_F_112070195_0e18918caetJjRMdLOhaUwzcWsOj2jTs.jpg" alt="Train into London">
+        </div>
+        <div>
+          <h1 id="pageTitle">Carshalton</h1>
+          <div class="code" id="pageKicker">Heading out from CSH</div>
+        </div>
+      </div>
+      <div class="clock" aria-live="polite">
+        <div class="time" id="clockTime">--:--</div>
+        <div class="date" id="clockDate">Loading</div>
+      </div>
+    </header>
+
+    <nav class="switcher" aria-label="Board direction">
+      <button id="outButton" type="button" aria-selected="true">Heading out</button>
+      <button id="backButton" type="button" aria-selected="false">Heading back</button>
+    </nav>
+
+    <section class="view active" id="outView" aria-labelledby="outHeading">
+      <div class="section-head">
+        <h2 id="outHeading">Next trains from home</h2>
+        <div class="updated" id="outUpdated">Updated --:--</div>
+      </div>
+      <div class="grid" id="outCards"></div>
+    </section>
+
+    <section class="view" id="backView" aria-labelledby="backHeading">
+      <div class="section-head">
+        <h2 id="backHeading">Trains back to Carshalton</h2>
+        <div class="updated" id="backUpdated">Updated --:--</div>
+      </div>
+      <div class="return-grid" id="backCards"></div>
+    </section>
+
+    <footer class="footer">
+      <span id="footerStatus">Design draft</span>
+      <span id="buildVersion">v2026.09.27.1905</span>
+    </footer>
+  </main>
+
+  <script>
+    const WALK_MINUTES = 10;
+    const BUILD_VERSION = "v2026.09.27.1905";
+    let liveBoard = null;
+
+    const headingImages = {
+      out: {
+        src: "https://as2.ftcdn.net/v2/jpg/01/12/07/01/1000_F_112070195_0e18918caetJjRMdLOhaUwzcWsOj2jTs.jpg",
+        alt: "Train into London"
+      },
+      back: {
+        src: "https://media.rightmove.co.uk/property-photo/b298c7e7b/164272481/b298c7e7bdfc0c2a29482e5b46278ce1.jpeg",
+        alt: "Home"
+      }
+    };
+
+    const outRoutes = [
+      {
+        name: "Victoria",
+        accent: "#040457",
+        departures: [7, 37],
+        journey: 36,
+        platform: "P1",
+        arrivals: [
+          ["Balham", 19],
+          ["London Victoria", 36]
+        ],
+        delayPattern: [0, 0, 3, 0, 6, 0]
+      },
+      {
+        name: "St Albans line",
+        accent: "#8fb5c8",
+        departures: [15, 45],
+        journey: 69,
+        platform: "P2",
+        arrivals: [
+          ["Elephant & Castle", 29],
+          ["City Thameslink", 36],
+          ["Farringdon", 39],
+          ["St Pancras", 44],
+          ["St Albans City", 69]
+        ],
+        delayPattern: [0, 4, 0, 0, 8, 0]
+      }
+    ];
+
+    const backStations = [
+      {
+        station: "Victoria",
+        accent: "#040457",
+        departures: [4, 34],
+        journey: 36,
+        platform: "P14",
+        delayPattern: [0, 2, 0, 5, 0]
+      },
+      {
+        station: "Balham",
+        accent: "#040457",
+        departures: [18, 48],
+        journey: 18,
+        platform: "P4",
+        delayPattern: [0, 2, 0, 0, 4]
+      },
+      {
+        station: "Elephant & Castle",
+        accent: "#8fb5c8",
+        departures: [11, 41],
+        journey: 28,
+        platform: "P4",
+        delayPattern: [0, 0, 3, 0, 7]
+      },
+      {
+        station: "City Thameslink",
+        accent: "#8fb5c8",
+        departures: [6, 36],
+        journey: 35,
+        platform: "P2",
+        delayPattern: [0, 4, 0, 0, 0]
+      },
+      {
+        station: "Farringdon",
+        accent: "#8fb5c8",
+        departures: [2, 32],
+        journey: 39,
+        platform: "P3",
+        delayPattern: [0, 0, 6, 0, 0]
+      },
+      {
+        station: "St Pancras",
+        accent: "#8fb5c8",
+        departures: [57, 27],
+        journey: 45,
+        platform: "A",
+        delayPattern: [3, 0, 0, 0, 5]
+      }
+    ];
+
+    const backRouteGroups = [
+      {
+        name: "Victoria",
+        accent: "#040457",
+        stations: ["Victoria", "Balham"]
+      },
+      {
+        name: "St Albans line",
+        accent: "#8fb5c8",
+        stations: ["St Pancras", "Farringdon", "City Thameslink", "Elephant & Castle"]
+      }
+    ];
+
+    const els = {
+      clockTime: document.querySelector("#clockTime"),
+      clockDate: document.querySelector("#clockDate"),
+      pageTitle: document.querySelector("#pageTitle"),
+      pageKicker: document.querySelector("#pageKicker"),
+      headerImage: document.querySelector("#headerImage"),
+      outButton: document.querySelector("#outButton"),
+      backButton: document.querySelector("#backButton"),
+      outView: document.querySelector("#outView"),
+      backView: document.querySelector("#backView"),
+      outUpdated: document.querySelector("#outUpdated"),
+      backUpdated: document.querySelector("#backUpdated"),
+      outCards: document.querySelector("#outCards"),
+      backCards: document.querySelector("#backCards"),
+      footerStatus: document.querySelector("#footerStatus"),
+      buildVersion: document.querySelector("#buildVersion")
+    };
+
+    const timeFormat = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+
+    const dateFormat = new Intl.DateTimeFormat("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short"
+    });
+
+    const API_BASE = "https://api.traini.ac/api";
+    const CRS = {
+      carshalton: "CSH",
+      victoria: "VIC",
+      balham: "BAL",
+      elephant: "EPH",
+      cityThameslink: "CTK",
+      farringdon: "ZFD",
+      stPancrasThameslink: "SPL",
+      stAlbans: "SAC"
+    };
+
+    const directBackOrigins = [
+      { station: "Victoria", crs: CRS.victoria, accent: "#040457" },
+      { station: "Balham", crs: CRS.balham, accent: "#040457" },
+      { station: "Elephant & Castle", crs: CRS.elephant, accent: "#8fb5c8" },
+      { station: "City Thameslink", crs: CRS.cityThameslink, accent: "#8fb5c8" },
+      { station: "Farringdon", crs: CRS.farringdon, accent: "#8fb5c8" },
+      { station: "St Pancras", crs: CRS.stPancrasThameslink, accent: "#8fb5c8" }
+    ];
+
+    const directBackGroups = [
+      {
+        name: "Victoria",
+        accent: "#040457",
+        origins: [CRS.victoria, CRS.balham]
+      },
+      {
+        name: "St Albans line",
+        accent: "#8fb5c8",
+        origins: [CRS.stPancrasThameslink, CRS.farringdon, CRS.cityThameslink, CRS.elephant]
+      }
+    ];
+
+    function minutesSinceMidnight(date) {
+      return date.getHours() * 60 + date.getMinutes();
+    }
+
+    function addMinutes(date, minutes) {
+      return new Date(date.getTime() + minutes * 60000);
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    async function trainiac(path, params = {}) {
+      const url = new URL(API_BASE + path);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.set(key, value);
+        }
+      });
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const response = await fetch(url, {
+          headers: { Accept: "application/json" },
+          cache: "no-store"
+        });
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        if ((response.status === 429 || response.status === 503) && attempt < 2) {
+          try {
+            const error = await response.json();
+            await sleep(Number(error.retry_after_seconds || 1) * 1000);
+          } catch {
+            await sleep(1200);
+          }
+          continue;
+        }
+
+        throw new Error("traini.ac unavailable");
+      }
+
+      throw new Error("traini.ac unavailable");
+    }
+
+    function directCallingPoints(service) {
+      return Array.isArray(service?.calling_points) ? service.calling_points : [];
+    }
+
+    function directCrsMatches(item, crs) {
+      return String(item?.crs || item?.station?.crs || "").toUpperCase() === crs;
+    }
+
+    function directHasCallingPoint(service, crs) {
+      return directCallingPoints(service).some((point) => directCrsMatches(point, crs));
+    }
+
+    function directDestinationMatches(service, crs) {
+      return directCrsMatches(service.destination, crs) || directCrsMatches(service.arrival_station, crs);
+    }
+
+    function directFindPoint(service, crs) {
+      return directCallingPoints(service).find((point) => directCrsMatches(point, crs));
+    }
+
+    function dateForIso(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function displayIsoTime(value) {
+      const date = dateForIso(value);
+      return date ? timeFormat.format(date) : "TBC";
+    }
+
+    function liveDepartureIso(service) {
+      return service.expected_departs || service.departs;
+    }
+
+    function liveArrivalIso(service) {
+      return service.expected_arrives || service.arrives;
+    }
+
+    function platformLabel(platform) {
+      if (!platform) return "Platform TBC";
+      if (String(platform).toUpperCase() === "BUS") return "BUS";
+      return /^\d+$/.test(String(platform)) ? "P" + platform : String(platform);
+    }
+
+    function directServiceStatus(service) {
+      if (service.status === "cancelled") {
+        return { statusType: "cancelled", statusLabel: "Cancelled", delayMinutes: null };
+      }
+
+      const scheduled = dateForIso(service.departs);
+      const estimated = dateForIso(service.expected_departs);
+      const fallbackDelay = Number.isFinite(service.lateness_minutes) ? service.lateness_minutes : 0;
+      const delayMinutes = scheduled && estimated
+        ? Math.max(0, Math.round((estimated.getTime() - scheduled.getTime()) / 60000))
+        : Math.max(0, fallbackDelay);
+
+      if (delayMinutes > 0) {
+        return { statusType: "delay", statusLabel: "+" + delayMinutes + " min", delayMinutes };
+      }
+
+      if (String(service.status || "").includes("delay")) {
+        return { statusType: "delay", statusLabel: "Delayed", delayMinutes: null };
+      }
+
+      return { statusType: "good", statusLabel: "On time", delayMinutes: 0 };
+    }
+
+    function isTrustworthyPassengerService(service) {
+      if (service.status === "cancelled") return true;
+      if (service.expected_departs || service.expected_arrives) return true;
+      if (Number.isFinite(service.lateness_minutes)) return true;
+      if (String(service.status_text || "").toLowerCase().includes("no live report")) return false;
+      return service.data_source !== "timetable";
+    }
+
+    function hasEngineeringWorkPattern(board) {
+      const services = board.results || [];
+      const hasReplacementBus = services.some((service) => service.service_class === "bus");
+      const hasCancelledPassenger = services.some((service) =>
+        service.service_class === "passenger" && service.status === "cancelled"
+      );
+      return hasReplacementBus && hasCancelledPassenger;
+    }
+
+    function livePassengerServices(board) {
+      const engineeringWork = hasEngineeringWorkPattern(board);
+      return (board.results || []).filter((service) =>
+        service.service_class === "passenger" &&
+        !service.not_for_display &&
+        (!engineeringWork || service.status === "cancelled") &&
+        isTrustworthyPassengerService(service)
+      );
+    }
+
+    function pointTime(point) {
+      return point ? displayIsoTime(point.expected || point.scheduled) : null;
+    }
+
+    function normalizeDirectOutRoute(name, service, stops, accent) {
+      if (!service) {
+        return {
+          name,
+          accent,
+          platform: "Platform TBC",
+          departureTime: "TBC",
+          departureIso: null,
+          statusType: "cancelled",
+          statusLabel: "No train service",
+          delayMinutes: null,
+          arrivals: stops.map((stop) => ({ name: stop.name, time: "TBC" }))
+        };
+      }
+
+      const status = directServiceStatus(service);
+      const departureIso = liveDepartureIso(service);
+
+      return {
+        name,
+        accent,
+        platform: platformLabel(service.platform),
+        departureTime: displayIsoTime(departureIso),
+        departureIso,
+        ...status,
+        arrivals: stops.map((stop) => {
+          const point = directFindPoint(service, stop.crs);
+          return { name: stop.name, time: pointTime(point) || "TBC" };
+        })
+      };
+    }
+
+    function normalizeDirectBackStation(origin, service) {
+      if (!service) {
+        return {
+          station: origin.station,
+          accent: origin.accent,
+          statusType: "delay",
+          statusLabel: "No direct train",
+          platform: "Platform TBC",
+          departureTime: "TBC",
+          departureIso: null,
+          arrivalTime: "TBC",
+          arrivalIso: null
+        };
+      }
+
+      const arrivalPoint = directFindPoint(service, CRS.carshalton);
+      const status = directServiceStatus(service);
+      const departureIso = liveDepartureIso(service);
+      const arrivalIso = arrivalPoint ? (arrivalPoint.expected || arrivalPoint.scheduled) : liveArrivalIso(service);
+
+      return {
+        station: origin.station,
+        accent: origin.accent,
+        platform: platformLabel(service.platform),
+        departureTime: displayIsoTime(departureIso),
+        departureIso,
+        arrivalTime: displayIsoTime(arrivalIso),
+        arrivalIso,
+        ...status
+      };
+    }
+
+    async function buildDirectBoard() {
+      const outboundBoard = await trainiac("/departures/" + CRS.carshalton, { limit: 30 });
+      const returnBoards = [];
+
+      for (const origin of directBackOrigins) {
+        returnBoards.push(await trainiac("/departures/" + origin.crs, {
+          limit: 20,
+          calling_at: CRS.carshalton
+        }));
+        await sleep(150);
+      }
+
+      const generatedAt = outboundBoard.generated_at || new Date().toISOString();
+      const outbound = livePassengerServices(outboundBoard);
+      const victoriaService = outbound.find((service) =>
+        directDestinationMatches(service, CRS.victoria) || directHasCallingPoint(service, CRS.victoria)
+      );
+      const stAlbansService = outbound.find((service) =>
+        directDestinationMatches(service, CRS.stAlbans) ||
+        [CRS.elephant, CRS.cityThameslink, CRS.farringdon, CRS.stPancrasThameslink, CRS.stAlbans].some((crs) =>
+          directHasCallingPoint(service, crs)
+        )
+      );
+
+      const backStationsLive = directBackOrigins.map((origin, index) =>
+        normalizeDirectBackStation(origin, livePassengerServices(returnBoards[index])[0])
+      );
+      const stationsByCrs = new Map(backStationsLive.map((station, index) => [directBackOrigins[index].crs, station]));
+
+      return {
+        source: "traini.ac",
+        generatedAt,
+        checkedAt: new Date().toISOString(),
+        refreshAfterSeconds: 60,
+        outRoutes: [
+          normalizeDirectOutRoute(
+            "Victoria",
+            victoriaService,
+            [
+              { name: "Balham", crs: CRS.balham },
+              { name: "London Victoria", crs: CRS.victoria }
+            ],
+            "#040457"
+          ),
+          normalizeDirectOutRoute(
+            "St Albans line",
+            stAlbansService,
+            [
+              { name: "Elephant & Castle", crs: CRS.elephant },
+              { name: "City Thameslink", crs: CRS.cityThameslink },
+              { name: "Farringdon", crs: CRS.farringdon },
+              { name: "St Pancras", crs: CRS.stPancrasThameslink },
+              { name: "St Albans City", crs: CRS.stAlbans }
+            ],
+            "#8fb5c8"
+          )
+        ],
+        backStations: backStationsLive,
+        backRoutes: directBackGroups.map((route) => ({
+          name: route.name,
+          accent: route.accent,
+          stations: route.origins.map((crs) => stationsByCrs.get(crs)).filter(Boolean)
+        }))
+      };
+    }
+
+    function nextService(now, config) {
+      const currentMinute = new Date(now);
+      currentMinute.setSeconds(0, 0);
+      const candidates = [];
+      const sorted = [...config.departures].sort((a, b) => a - b);
+
+      for (let hourOffset = -1; hourOffset <= 2; hourOffset += 1) {
+        for (const minute of sorted) {
+          const scheduled = new Date(now);
+          scheduled.setHours(now.getHours() + hourOffset, minute, 0, 0);
+          const indexSeed = Math.floor(minutesSinceMidnight(scheduled) / 30);
+          const delay = config.delayPattern[indexSeed % config.delayPattern.length];
+          const estimated = addMinutes(scheduled, delay);
+
+          if (estimated >= currentMinute) {
+            candidates.push({ scheduled, estimated, delay });
+          }
+        }
+      }
+
+      candidates.sort((a, b) => a.estimated - b.estimated);
+      return candidates[0];
+    }
+
+    function statusClass(delay) {
+      if (delay === "cancelled") return "cancelled";
+      if (delay === "delay") return "delay";
+      if (delay === "good") return "good";
+      if (delay >= 5) return "delay";
+      if (delay > 0) return "delay";
+      return "good";
+    }
+
+    function statusText(delay) {
+      if (delay === 0) return "On time";
+      return "+" + delay + " min";
+    }
+
+    function leaveText(now, estimated) {
+      const mins = Math.ceil((estimated.getTime() - now.getTime()) / 60000) - WALK_MINUTES;
+      if (mins > 1) return "Leave house in " + mins + " minutes";
+      if (mins === 1) return "Leave house in 1 minute";
+      if (mins >= -2) return "Leave house now";
+      return "Too tight";
+    }
+
+    function liveLeaveText(route, departureDate, now) {
+      if (route.statusLabel === "No train service") return "No train service";
+      if (route.statusType === "cancelled") return "Cancelled";
+      return departureDate ? leaveText(now, departureDate) : "Check board";
+    }
+
+    function renderOut(now) {
+      if (liveBoard && Array.isArray(liveBoard.outRoutes)) {
+        els.outCards.innerHTML = liveBoard.outRoutes.map((route) => {
+          const departureDate = route.departureIso ? new Date(route.departureIso) : null;
+          const rows = (route.arrivals || []).map((arrival) => `
+            <div class="arrival-row">
+              <span>${arrival.name}</span>
+              <span class="arrival-time">${arrival.time}</span>
+            </div>
+          `).join("");
+
+          return `
+            <article class="route-card" style="--accent:${route.accent || "var(--blue)"}">
+              <div class="card-main">
+                <div class="route-title">
+                  <h3>${route.name}</h3>
+                  <span class="pill ${statusClass(route.statusType)}">${route.statusLabel} | ${route.platform}</span>
+                </div>
+                <div class="primary-times">
+                  <div class="departure">
+                    <span class="label">Departs Carshalton</span>
+                    <span class="big-time">${route.departureTime}</span>
+                  </div>
+                  <div class="leave-box">
+                    <div class="leave-value">${liveLeaveText(route, departureDate, now)}</div>
+                  </div>
+                </div>
+                <div class="arrivals">${rows}</div>
+              </div>
+            </article>
+          `;
+        }).join("");
+        return;
+      }
+
+      els.outCards.innerHTML = outRoutes.map((route) => {
+        const service = nextService(now, route);
+        const rows = route.arrivals.map(([station, minutes]) => {
+          const arrival = addMinutes(service.estimated, minutes);
+          return `
+            <div class="arrival-row">
+              <span>${station}</span>
+              <span class="arrival-time">${timeFormat.format(arrival)}</span>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <article class="route-card" style="--accent:${route.accent}">
+            <div class="card-main">
+              <div class="route-title">
+                <h3>${route.name}</h3>
+                <span class="pill ${statusClass(service.delay)}">${statusText(service.delay)} | ${route.platform}</span>
+              </div>
+              <div class="primary-times">
+                <div class="departure">
+                  <span class="label">Departs Carshalton</span>
+                  <span class="big-time">${timeFormat.format(service.estimated)}</span>
+                </div>
+                <div class="leave-box">
+                  <div class="leave-value">${leaveText(now, service.estimated)}</div>
+                </div>
+              </div>
+              <div class="arrivals">${rows}</div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderBack(now) {
+      if (liveBoard && Array.isArray(liveBoard.backRoutes)) {
+        els.backCards.innerHTML = liveBoard.backRoutes.map((route) => {
+          const rows = route.stations.map((origin) => `
+            <div class="return-station-row">
+              <div class="return-station">
+                <span class="mini-label">From</span>
+                <strong>${origin.station}</strong>
+              </div>
+              <div class="return-mini">
+                <span class="mini-label">Departs</span>
+                <strong>${origin.departureTime}</strong>
+              </div>
+              <div class="return-mini arrival-cell">
+                <span class="mini-label">Arrives Carshalton</span>
+                <strong>${origin.arrivalTime}</strong>
+              </div>
+              <span class="pill ${statusClass(origin.statusType)}">${origin.statusLabel} | ${origin.platform}</span>
+            </div>
+          `).join("");
+
+          return `
+            <article class="return-card" style="--accent:${route.accent || "var(--blue-soft)"}">
+              <div class="card-main">
+                <div class="return-title">
+                  <h3>${route.name}</h3>
+                </div>
+                <div class="return-route-list">${rows}</div>
+              </div>
+            </article>
+          `;
+        }).join("");
+        return;
+      }
+
+      els.backCards.innerHTML = backRouteGroups.map((route) => {
+        const rows = route.stations.map((stationName) => {
+          const origin = backStations.find((station) => station.station === stationName);
+          const service = nextService(now, origin);
+          const arrival = addMinutes(service.estimated, origin.journey);
+          return `
+            <div class="return-station-row">
+              <div class="return-station">
+                <span class="mini-label">From</span>
+                <strong>${origin.station}</strong>
+              </div>
+              <div class="return-mini">
+                <span class="mini-label">Departs</span>
+                <strong>${timeFormat.format(service.estimated)}</strong>
+              </div>
+              <div class="return-mini arrival-cell">
+                <span class="mini-label">Arrives Carshalton</span>
+                <strong>${timeFormat.format(arrival)}</strong>
+              </div>
+              <span class="pill ${statusClass(service.delay)}">${statusText(service.delay)} | ${origin.platform}</span>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <article class="return-card" style="--accent:${route.accent}">
+            <div class="card-main">
+              <div class="return-title">
+                <h3>${route.name}</h3>
+              </div>
+              <div class="return-route-list">${rows}</div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderBackOld(now) {
+      els.backCards.innerHTML = backStations.map((origin) => {
+        const service = nextService(now, origin);
+        const arrival = addMinutes(service.estimated, origin.journey);
+
+        return `
+          <article class="return-card" style="--accent:${origin.accent}">
+            <div class="card-main">
+              <div class="return-title">
+                <span class="pill ${statusClass(service.delay)}">${statusText(service.delay)} | ${origin.platform}</span>
+                <h3>${origin.station}</h3>
+              </div>
+              <div class="return-departure">
+                <span class="label">Next train</span>
+                <span class="big-time">${timeFormat.format(service.estimated)}</span>
+              </div>
+              <div class="divider"></div>
+              <div class="small-list">
+                <div class="return-row">
+                  <span>Arrives Carshalton</span>
+                  <span class="return-time">${timeFormat.format(arrival)}</span>
+                </div>
+                <div class="return-row">
+                  <span>Leaves in</span>
+                  <span class="return-time">${Math.ceil((service.estimated - now) / 60000)} min</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function setView(view) {
+      const isBack = view === "back";
+      els.outButton.setAttribute("aria-selected", String(!isBack));
+      els.backButton.setAttribute("aria-selected", String(isBack));
+      els.outView.classList.toggle("active", !isBack);
+      els.backView.classList.toggle("active", isBack);
+      els.pageTitle.textContent = isBack ? "Heading back" : "Carshalton";
+      els.pageKicker.textContent = isBack ? "To CSH from London" : "Heading out from CSH";
+      els.headerImage.src = isBack ? headingImages.back.src : headingImages.out.src;
+      els.headerImage.alt = isBack ? headingImages.back.alt : headingImages.out.alt;
+      window.location.hash = isBack ? "back" : "out";
+    }
+
+    function render() {
+      const now = new Date();
+      const updatedAt = liveBoard?.generatedAt ? new Date(liveBoard.generatedAt) : now;
+      const checkedAt = liveBoard?.checkedAt ? new Date(liveBoard.checkedAt) : null;
+      const updatedLabel = checkedAt
+        ? "Data from API " + timeFormat.format(updatedAt) + " · page opened " + timeFormat.format(checkedAt)
+        : "Updated " + timeFormat.format(updatedAt);
+      els.clockTime.textContent = timeFormat.format(now);
+      els.clockDate.textContent = dateFormat.format(now);
+      els.outUpdated.textContent = updatedLabel;
+      els.backUpdated.textContent = updatedLabel;
+      els.footerStatus.textContent = liveBoard?.source ? "Live via " + liveBoard.source : "Design draft";
+      els.buildVersion.textContent = BUILD_VERSION;
+      renderOut(now);
+      renderBack(now);
+    }
+
+    async function fetchLiveBoard() {
+      try {
+        const canUseLocalApi = ["127.0.0.1", "localhost"].includes(window.location.hostname);
+
+        if (canUseLocalApi) {
+          try {
+            const response = await fetch("/api/board", { cache: "no-store" });
+            if (!response.ok) {
+              throw new Error("Local API unavailable");
+            }
+            liveBoard = await response.json();
+            liveBoard.checkedAt = new Date().toISOString();
+          } catch {
+            liveBoard = await buildDirectBoard();
+          }
+        } else {
+          liveBoard = await buildDirectBoard();
+        }
+
+        render();
+        const seconds = liveBoard.refreshAfterSeconds || 30;
+        window.setTimeout(fetchLiveBoard, seconds * 1000);
+      } catch (error) {
+        window.setTimeout(fetchLiveBoard, 60000);
+      }
+    }
+
+    els.outButton.addEventListener("click", () => setView("out"));
+    els.backButton.addEventListener("click", () => setView("back"));
+
+    window.addEventListener("hashchange", () => {
+      setView(window.location.hash === "#back" ? "back" : "out");
+    });
+
+    render();
+    setView(window.location.hash === "#back" ? "back" : "out");
+    setInterval(render, 20000);
+
+    if (window.location.protocol !== "file:") {
+      fetchLiveBoard();
+      window.setTimeout(() => window.location.reload(), 6 * 60 * 60 * 1000);
+    }
+  </script>
+</body>
+</html>
