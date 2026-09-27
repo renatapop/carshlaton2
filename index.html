@@ -446,7 +446,7 @@
 
     .return-station-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) auto auto auto;
+      grid-template-columns: minmax(0, 1.25fr) auto minmax(220px, auto) auto;
       align-items: center;
       gap: 14px;
       min-height: 58px;
@@ -479,15 +479,25 @@
     }
 
     .return-mini.arrival-cell {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
       padding: 8px 10px;
       border: 1px solid rgba(4, 4, 87, 0.12);
       border-radius: 6px;
       background: rgba(4, 4, 87, 0.045);
+      text-align: left;
     }
 
     .return-mini.arrival-cell .mini-label,
     .return-mini.arrival-cell strong {
       color: var(--blue);
+    }
+
+    .return-mini.arrival-cell .mini-label {
+      margin-bottom: 0;
+      white-space: nowrap;
     }
 
     .mini-label {
@@ -599,6 +609,10 @@
         grid-template-columns: minmax(0, 1fr) auto;
       }
 
+      .return-mini.arrival-cell {
+        grid-column: 1 / -1;
+      }
+
       .return-station-row .pill {
         grid-column: 1 / -1;
         justify-self: start;
@@ -667,9 +681,11 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.27.1918";
+    const BUILD_VERSION = "v2026.09.27.1949";
     let boardState = window.location.protocol === "file:" ? "offline" : "loading";
     let liveBoard = null;
+    let refreshTimer = null;
+    const boardFetches = new Set();
 
     const headingImages = {
       out: {
@@ -826,6 +842,11 @@
       { station: "Farringdon", crs: CRS.farringdon, accent: "#8fb5c8" },
       { station: "St Pancras", crs: CRS.stPancrasThameslink, accent: "#8fb5c8" }
     ];
+
+    const returnMinimumLeadMinutes = {
+      [CRS.balham]: 20,
+      [CRS.elephant]: 20
+    };
 
     const directBackGroups = [
       {
@@ -1049,19 +1070,22 @@
       };
     }
 
-    async function buildDirectBoard() {
-      const outboundBoard = await trainiac("/departures/" + CRS.carshalton, { limit: 30 });
-      const returnBoards = [];
+    function selectDirectBackService(origin, board, now) {
+      const services = livePassengerServices(board);
+      const minimumLeadMinutes = returnMinimumLeadMinutes[origin.crs] || 0;
 
-      for (const origin of directBackOrigins) {
-        returnBoards.push(await trainiac("/departures/" + origin.crs, {
-          limit: 20,
-          calling_at: CRS.carshalton
-        }));
-        await sleep(150);
+      if (!minimumLeadMinutes) {
+        return services[0];
       }
 
-      const generatedAt = outboundBoard.generated_at || new Date().toISOString();
+      return services.find((service) => {
+        const departure = dateForIso(liveDepartureIso(service));
+        if (!departure) return false;
+        return departure.getTime() - now.getTime() > minimumLeadMinutes * 60000;
+      });
+    }
+
+    function directOutRoutesFromBoard(outboundBoard) {
       const outbound = livePassengerServices(outboundBoard);
       const victoriaService = outbound.find((service) =>
         directDestinationMatches(service, CRS.victoria) || directHasCallingPoint(service, CRS.victoria)
@@ -1073,39 +1097,60 @@
         )
       );
 
+      return [
+        normalizeDirectOutRoute(
+          "Victoria",
+          victoriaService,
+          [
+            { name: "Balham", crs: CRS.balham },
+            { name: "London Victoria", crs: CRS.victoria }
+          ],
+          "#040457"
+        ),
+        normalizeDirectOutRoute(
+          "St Albans line",
+          stAlbansService,
+          [
+            { name: "Elephant & Castle", crs: CRS.elephant },
+            { name: "City Thameslink", crs: CRS.cityThameslink },
+            { name: "Farringdon", crs: CRS.farringdon },
+            { name: "St Pancras", crs: CRS.stPancrasThameslink },
+            { name: "St Albans City", crs: CRS.stAlbans }
+          ],
+          "#8fb5c8"
+        )
+      ];
+    }
+
+    async function buildDirectOutBoard() {
+      const outboundBoard = await trainiac("/departures/" + CRS.carshalton, { limit: 30 });
+      return {
+        source: "traini.ac",
+        generatedAt: outboundBoard.generated_at || new Date().toISOString(),
+        checkedAt: new Date().toISOString(),
+        refreshAfterSeconds: 60,
+        outRoutes: directOutRoutesFromBoard(outboundBoard)
+      };
+    }
+
+    async function buildDirectBackBoard() {
+      const now = new Date();
+      const returnBoards = await Promise.all(directBackOrigins.map((origin) =>
+        trainiac("/departures/" + origin.crs, {
+          limit: 20,
+          calling_at: CRS.carshalton
+        })
+      ));
       const backStationsLive = directBackOrigins.map((origin, index) =>
-        normalizeDirectBackStation(origin, livePassengerServices(returnBoards[index])[0])
+        normalizeDirectBackStation(origin, selectDirectBackService(origin, returnBoards[index], now))
       );
       const stationsByCrs = new Map(backStationsLive.map((station, index) => [directBackOrigins[index].crs, station]));
 
       return {
         source: "traini.ac",
-        generatedAt,
+        generatedAt: returnBoards.find((board) => board?.generated_at)?.generated_at || new Date().toISOString(),
         checkedAt: new Date().toISOString(),
         refreshAfterSeconds: 60,
-        outRoutes: [
-          normalizeDirectOutRoute(
-            "Victoria",
-            victoriaService,
-            [
-              { name: "Balham", crs: CRS.balham },
-              { name: "London Victoria", crs: CRS.victoria }
-            ],
-            "#040457"
-          ),
-          normalizeDirectOutRoute(
-            "St Albans line",
-            stAlbansService,
-            [
-              { name: "Elephant & Castle", crs: CRS.elephant },
-              { name: "City Thameslink", crs: CRS.cityThameslink },
-              { name: "Farringdon", crs: CRS.farringdon },
-              { name: "St Pancras", crs: CRS.stPancrasThameslink },
-              { name: "St Albans City", crs: CRS.stAlbans }
-            ],
-            "#8fb5c8"
-          )
-        ],
         backStations: backStationsLive,
         backRoutes: directBackGroups.map((route) => ({
           name: route.name,
@@ -1113,6 +1158,10 @@
           stations: route.origins.map((crs) => stationsByCrs.get(crs)).filter(Boolean)
         }))
       };
+    }
+
+    async function buildDirectBoard(view = currentView()) {
+      return view === "back" ? buildDirectBackBoard() : buildDirectOutBoard();
     }
 
     function nextService(now, config) {
@@ -1303,6 +1352,28 @@
       els.headerImage.src = isBack ? headingImages.back.src : headingImages.out.src;
       els.headerImage.alt = isBack ? headingImages.back.alt : headingImages.out.alt;
       window.location.hash = isBack ? "back" : "out";
+      if (window.location.protocol !== "file:" && !hasLiveData(view)) {
+        fetchLiveBoard(view);
+      }
+    }
+
+    function currentView() {
+      return window.location.hash === "#back" ? "back" : "out";
+    }
+
+    function hasLiveData(view) {
+      return view === "back" ? Array.isArray(liveBoard?.backRoutes) : Array.isArray(liveBoard?.outRoutes);
+    }
+
+    function mergeLiveBoard(partial) {
+      liveBoard = {
+        ...(liveBoard || {}),
+        ...partial,
+        source: partial.source || liveBoard?.source,
+        generatedAt: partial.generatedAt || liveBoard?.generatedAt,
+        checkedAt: partial.checkedAt || new Date().toISOString(),
+        refreshAfterSeconds: partial.refreshAfterSeconds || liveBoard?.refreshAfterSeconds || 60
+      };
     }
 
     function render() {
@@ -1328,35 +1399,50 @@
       renderBack(now);
     }
 
-    async function fetchLiveBoard() {
+    async function fetchLiveBoard(view = currentView()) {
+      if (boardFetches.has(view)) return;
+      boardFetches.add(view);
       try {
         const canUseLocalApi = ["127.0.0.1", "localhost"].includes(window.location.hostname);
+        let partialBoard;
 
         if (canUseLocalApi) {
           try {
-            const response = await fetch("/api/board", { cache: "no-store" });
+            const response = await fetch("/api/board?view=" + encodeURIComponent(view), { cache: "no-store" });
             if (!response.ok) {
-              throw new Error("Local API unavailable");
+              if (response.status === 404) {
+                throw new Error("Local API missing");
+              }
+              const error = await response.json().catch(() => ({}));
+              throw new Error(error.error || "Live API unavailable");
             }
-            liveBoard = await response.json();
-            liveBoard.checkedAt = new Date().toISOString();
-          } catch {
-            liveBoard = await buildDirectBoard();
+            partialBoard = await response.json();
+            partialBoard.checkedAt = new Date().toISOString();
+          } catch (error) {
+            if (error.message !== "Local API missing" && !(error instanceof TypeError)) {
+              throw error;
+            }
+            partialBoard = await buildDirectBoard(view);
           }
         } else {
-          liveBoard = await buildDirectBoard();
+          partialBoard = await buildDirectBoard(view);
         }
 
+        mergeLiveBoard(partialBoard);
         boardState = "live";
         render();
         const seconds = liveBoard.refreshAfterSeconds || 30;
-        window.setTimeout(fetchLiveBoard, seconds * 1000);
+        window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(() => fetchLiveBoard(currentView()), seconds * 1000);
       } catch (error) {
-        if (!liveBoard) {
+        if (!hasLiveData(view)) {
           boardState = "loading";
           render();
         }
-        window.setTimeout(fetchLiveBoard, 60000);
+        window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(() => fetchLiveBoard(currentView()), 60000);
+      } finally {
+        boardFetches.delete(view);
       }
     }
 
@@ -1372,7 +1458,7 @@
     setInterval(render, 20000);
 
     if (window.location.protocol !== "file:") {
-      fetchLiveBoard();
+      fetchLiveBoard(currentView());
       window.setTimeout(() => window.location.reload(), 6 * 60 * 60 * 1000);
     }
   </script>
