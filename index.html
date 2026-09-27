@@ -321,6 +321,11 @@
       background: rgba(187, 77, 70, 0.1);
     }
 
+    .pill.loading {
+      color: var(--muted);
+      background: rgba(112, 128, 141, 0.1);
+    }
+
     .primary-times {
       display: grid;
       grid-template-columns: 1fr;
@@ -681,7 +686,8 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.27.1949";
+    const BUILD_VERSION = "v2026.09.27.2010";
+    const CACHE_TTL_MS = 60000;
     let boardState = window.location.protocol === "file:" ? "offline" : "loading";
     let liveBoard = null;
     let refreshTimer = null;
@@ -873,7 +879,28 @@
       return new Promise((resolve) => window.setTimeout(resolve, ms));
     }
 
-    async function trainiac(path, params = {}) {
+    function cacheRead(key) {
+      try {
+        const cached = JSON.parse(window.localStorage.getItem("carshalton:" + key) || "null");
+        if (!cached || Date.now() - cached.savedAt > CACHE_TTL_MS) return null;
+        return cached.data;
+      } catch {
+        return null;
+      }
+    }
+
+    function cacheWrite(key, data) {
+      try {
+        window.localStorage.setItem("carshalton:" + key, JSON.stringify({
+          savedAt: Date.now(),
+          data
+        }));
+      } catch {
+        // Storage is an optional speed-up only.
+      }
+    }
+
+    async function trainiac(path, params = {}, maxAttempts = 3) {
       const url = new URL(API_BASE + path);
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -881,7 +908,7 @@
         }
       });
 
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const response = await fetch(url, {
           headers: { Accept: "application/json" },
           cache: "no-store"
@@ -891,7 +918,7 @@
           return response.json();
         }
 
-        if ((response.status === 429 || response.status === 503) && attempt < 2) {
+        if ((response.status === 429 || response.status === 503) && attempt < maxAttempts - 1) {
           try {
             const error = await response.json();
             await sleep(Number(error.retry_after_seconds || 1) * 1000);
@@ -1042,6 +1069,7 @@
       if (!service) {
         return {
           station: origin.station,
+          crs: origin.crs,
           accent: origin.accent,
           statusType: "delay",
           statusLabel: "No direct train",
@@ -1060,6 +1088,7 @@
 
       return {
         station: origin.station,
+        crs: origin.crs,
         accent: origin.accent,
         platform: platformLabel(service.platform),
         departureTime: displayIsoTime(departureIso),
@@ -1082,6 +1111,66 @@
         const departure = dateForIso(liveDepartureIso(service));
         if (!departure) return false;
         return departure.getTime() - now.getTime() > minimumLeadMinutes * 60000;
+      });
+    }
+
+    function backStationPlaceholder(origin) {
+      return {
+        station: origin.station,
+        crs: origin.crs,
+        accent: origin.accent,
+        pending: true,
+        statusType: "loading",
+        statusLabel: "Checking",
+        platform: "",
+        departureTime: "--:--",
+        departureIso: null,
+        arrivalTime: "--:--",
+        arrivalIso: null
+      };
+    }
+
+    function backStationUnavailable(origin) {
+      return {
+        station: origin.station,
+        crs: origin.crs,
+        accent: origin.accent,
+        unavailable: true,
+        statusType: "delay",
+        statusLabel: "Could not load",
+        platform: "",
+        departureTime: "--:--",
+        departureIso: null,
+        arrivalTime: "--:--",
+        arrivalIso: null
+      };
+    }
+
+    function backRoutesFromStations(stations) {
+      const stationsByCrs = new Map(stations.map((station) => [station.crs, station]));
+      return directBackGroups.map((route) => ({
+        name: route.name,
+        accent: route.accent,
+        stations: route.origins.map((crs) =>
+          stationsByCrs.get(crs) || backStationPlaceholder(directBackOrigins.find((origin) => origin.crs === crs))
+        )
+      }));
+    }
+
+    function mergeBackStation(station) {
+      const existing = Array.isArray(liveBoard?.backStations) ? liveBoard.backStations : [];
+      const stationsByCrs = new Map(existing.map((item) => [item.crs, item]));
+      stationsByCrs.set(station.crs, station);
+      const backStationsLive = directBackOrigins.map((origin) =>
+        stationsByCrs.get(origin.crs) || backStationPlaceholder(origin)
+      );
+      mergeLiveBoard({
+        source: "traini.ac",
+        generatedAt: liveBoard?.generatedAt || new Date().toISOString(),
+        checkedAt: new Date().toISOString(),
+        refreshAfterSeconds: 60,
+        backStations: backStationsLive,
+        backRoutes: backRoutesFromStations(backStationsLive)
       });
     }
 
@@ -1123,7 +1212,7 @@
     }
 
     async function buildDirectOutBoard() {
-      const outboundBoard = await trainiac("/departures/" + CRS.carshalton, { limit: 30 });
+      const outboundBoard = await trainiac("/departures/" + CRS.carshalton, { limit: 30 }, 2);
       return {
         source: "traini.ac",
         generatedAt: outboundBoard.generated_at || new Date().toISOString(),
@@ -1133,35 +1222,82 @@
       };
     }
 
-    async function buildDirectBackBoard() {
+    async function buildDirectBackStation(origin, now) {
+      const board = await trainiac("/departures/" + origin.crs, {
+        limit: 20,
+        calling_at: CRS.carshalton
+      }, 1);
+      return {
+        station: normalizeDirectBackStation(origin, selectDirectBackService(origin, board, now)),
+        generatedAt: board.generated_at || new Date().toISOString()
+      };
+    }
+
+    async function buildDirectBackBoard(progressive = false) {
       const now = new Date();
-      const returnBoards = await Promise.all(directBackOrigins.map((origin) =>
-        trainiac("/departures/" + origin.crs, {
-          limit: 20,
-          calling_at: CRS.carshalton
-        })
-      ));
-      const backStationsLive = directBackOrigins.map((origin, index) =>
-        normalizeDirectBackStation(origin, selectDirectBackService(origin, returnBoards[index], now))
+      const cachedStations = directBackOrigins
+        .map((origin) => cacheRead("back:" + origin.crs))
+        .filter(Boolean);
+
+      if (progressive) {
+        const startingStations = directBackOrigins.map((origin) =>
+          cachedStations.find((station) => station.crs === origin.crs) || backStationPlaceholder(origin)
+        );
+        mergeLiveBoard({
+          source: "traini.ac",
+          generatedAt: new Date().toISOString(),
+          checkedAt: new Date().toISOString(),
+          refreshAfterSeconds: 60,
+          backStations: startingStations,
+          backRoutes: backRoutesFromStations(startingStations)
+        });
+        boardState = "live";
+        render();
+      }
+
+      const freshStations = [...cachedStations];
+      let generatedAt = new Date().toISOString();
+
+      for (const origin of directBackOrigins) {
+        try {
+          const result = await buildDirectBackStation(origin, now);
+          generatedAt = result.generatedAt || generatedAt;
+          cacheWrite("back:" + origin.crs, result.station);
+          const index = freshStations.findIndex((station) => station.crs === origin.crs);
+          if (index >= 0) {
+            freshStations[index] = result.station;
+          } else {
+            freshStations.push(result.station);
+          }
+          if (progressive) {
+            mergeBackStation(result.station);
+            liveBoard.generatedAt = generatedAt;
+            render();
+          }
+        } catch {
+          if (!cachedStations.some((station) => station.crs === origin.crs) && progressive) {
+            mergeBackStation(backStationUnavailable(origin));
+            render();
+          }
+        }
+      }
+
+      const backStationsLive = directBackOrigins.map((origin) =>
+        freshStations.find((station) => station.crs === origin.crs) || backStationUnavailable(origin)
       );
-      const stationsByCrs = new Map(backStationsLive.map((station, index) => [directBackOrigins[index].crs, station]));
 
       return {
         source: "traini.ac",
-        generatedAt: returnBoards.find((board) => board?.generated_at)?.generated_at || new Date().toISOString(),
+        generatedAt,
         checkedAt: new Date().toISOString(),
         refreshAfterSeconds: 60,
         backStations: backStationsLive,
-        backRoutes: directBackGroups.map((route) => ({
-          name: route.name,
-          accent: route.accent,
-          stations: route.origins.map((crs) => stationsByCrs.get(crs)).filter(Boolean)
-        }))
+        backRoutes: backRoutesFromStations(backStationsLive)
       };
     }
 
     async function buildDirectBoard(view = currentView()) {
-      return view === "back" ? buildDirectBackBoard() : buildDirectOutBoard();
+      return view === "back" ? buildDirectBackBoard(true) : buildDirectOutBoard();
     }
 
     function nextService(now, config) {
@@ -1189,6 +1325,7 @@
     }
 
     function statusClass(delay) {
+      if (delay === "loading") return "loading";
       if (delay === "cancelled") return "cancelled";
       if (delay === "delay") return "delay";
       if (delay === "good") return "good";
@@ -1285,7 +1422,7 @@
                 <span class="mini-label">Arrives Carshalton</span>
                 <strong>${origin.arrivalTime}</strong>
               </div>
-              <span class="pill ${statusClass(origin.statusType)}">${origin.statusLabel} | ${origin.platform}</span>
+              <span class="pill ${statusClass(origin.statusType)}">${origin.platform ? origin.statusLabel + " | " + origin.platform : origin.statusLabel}</span>
             </div>
           `).join("");
 
@@ -1362,7 +1499,12 @@
     }
 
     function hasLiveData(view) {
-      return view === "back" ? Array.isArray(liveBoard?.backRoutes) : Array.isArray(liveBoard?.outRoutes);
+      if (view !== "back") {
+        return Array.isArray(liveBoard?.outRoutes);
+      }
+      return Array.isArray(liveBoard?.backStations) &&
+        liveBoard.backStations.length === directBackOrigins.length &&
+        liveBoard.backStations.every((station) => !station.pending && !station.unavailable);
     }
 
     function mergeLiveBoard(partial) {
@@ -1405,8 +1547,20 @@
       try {
         const canUseLocalApi = ["127.0.0.1", "localhost"].includes(window.location.hostname);
         let partialBoard;
+        const cachedBoard = cacheRead("view:" + view);
 
-        if (canUseLocalApi) {
+        if (cachedBoard) {
+          mergeLiveBoard(cachedBoard);
+          boardState = "live";
+          render();
+          window.clearTimeout(refreshTimer);
+          refreshTimer = window.setTimeout(() => fetchLiveBoard(currentView()), cachedBoard.refreshAfterSeconds * 1000 || 60000);
+          return;
+        }
+
+        if (view === "back") {
+          partialBoard = await buildDirectBackBoard(true);
+        } else if (canUseLocalApi) {
           try {
             const response = await fetch("/api/board?view=" + encodeURIComponent(view), { cache: "no-store" });
             if (!response.ok) {
@@ -1429,6 +1583,9 @@
         }
 
         mergeLiveBoard(partialBoard);
+        if (view !== "back" || partialBoard.backStations.every((station) => !station.unavailable)) {
+          cacheWrite("view:" + view, partialBoard);
+        }
         boardState = "live";
         render();
         const seconds = liveBoard.refreshAfterSeconds || 30;
