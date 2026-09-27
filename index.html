@@ -207,6 +207,49 @@
       gap: clamp(12px, 2vw, 18px);
     }
 
+    .board-state {
+      grid-column: 1 / -1;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      gap: 14px;
+      padding: clamp(24px, 5vw, 44px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .loading-cog {
+      width: 52px;
+      height: 52px;
+      border: 5px solid rgba(4, 4, 87, 0.14);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 900ms linear infinite;
+    }
+
+    .state-title {
+      color: var(--blue);
+      font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+      font-weight: 650;
+    }
+
+    .state-copy {
+      max-width: 420px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 560;
+      line-height: 1.45;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .route-card,
     .return-card {
       position: relative;
@@ -624,7 +667,8 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.27.1905";
+    const BUILD_VERSION = "v2026.09.27.1918";
+    let boardState = window.location.protocol === "file:" ? "offline" : "loading";
     let liveBoard = null;
 
     const headingImages = {
@@ -1123,6 +1167,18 @@
       return departureDate ? leaveText(now, departureDate) : "Check board";
     }
 
+    function boardStateMarkup(title, copy, isLoading = false) {
+      return `
+        <div class="board-state" role="status" aria-live="polite">
+          ${isLoading ? '<div class="loading-cog" aria-hidden="true"></div>' : ""}
+          <div>
+            <div class="state-title">${title}</div>
+            ${copy ? `<div class="state-copy">${copy}</div>` : ""}
+          </div>
+        </div>
+      `;
+    }
+
     function renderOut(now) {
       if (liveBoard && Array.isArray(liveBoard.outRoutes)) {
         els.outCards.innerHTML = liveBoard.outRoutes.map((route) => {
@@ -1158,39 +1214,9 @@
         return;
       }
 
-      els.outCards.innerHTML = outRoutes.map((route) => {
-        const service = nextService(now, route);
-        const rows = route.arrivals.map(([station, minutes]) => {
-          const arrival = addMinutes(service.estimated, minutes);
-          return `
-            <div class="arrival-row">
-              <span>${station}</span>
-              <span class="arrival-time">${timeFormat.format(arrival)}</span>
-            </div>
-          `;
-        }).join("");
-
-        return `
-          <article class="route-card" style="--accent:${route.accent}">
-            <div class="card-main">
-              <div class="route-title">
-                <h3>${route.name}</h3>
-                <span class="pill ${statusClass(service.delay)}">${statusText(service.delay)} | ${route.platform}</span>
-              </div>
-              <div class="primary-times">
-                <div class="departure">
-                  <span class="label">Departs Carshalton</span>
-                  <span class="big-time">${timeFormat.format(service.estimated)}</span>
-                </div>
-                <div class="leave-box">
-                  <div class="leave-value">${leaveText(now, service.estimated)}</div>
-                </div>
-              </div>
-              <div class="arrivals">${rows}</div>
-            </div>
-          </article>
-        `;
-      }).join("");
+      els.outCards.innerHTML = boardState === "offline"
+        ? boardStateMarkup("Live data needs the web version", "Open this through the local preview or GitHub Pages so it can check traini.ac.")
+        : boardStateMarkup("Loading live departures", "Checking traini.ac before showing any trains.", true);
     }
 
     function renderBack(now) {
@@ -1228,41 +1254,9 @@
         return;
       }
 
-      els.backCards.innerHTML = backRouteGroups.map((route) => {
-        const rows = route.stations.map((stationName) => {
-          const origin = backStations.find((station) => station.station === stationName);
-          const service = nextService(now, origin);
-          const arrival = addMinutes(service.estimated, origin.journey);
-          return `
-            <div class="return-station-row">
-              <div class="return-station">
-                <span class="mini-label">From</span>
-                <strong>${origin.station}</strong>
-              </div>
-              <div class="return-mini">
-                <span class="mini-label">Departs</span>
-                <strong>${timeFormat.format(service.estimated)}</strong>
-              </div>
-              <div class="return-mini arrival-cell">
-                <span class="mini-label">Arrives Carshalton</span>
-                <strong>${timeFormat.format(arrival)}</strong>
-              </div>
-              <span class="pill ${statusClass(service.delay)}">${statusText(service.delay)} | ${origin.platform}</span>
-            </div>
-          `;
-        }).join("");
-
-        return `
-          <article class="return-card" style="--accent:${route.accent}">
-            <div class="card-main">
-              <div class="return-title">
-                <h3>${route.name}</h3>
-              </div>
-              <div class="return-route-list">${rows}</div>
-            </div>
-          </article>
-        `;
-      }).join("");
+      els.backCards.innerHTML = boardState === "offline"
+        ? boardStateMarkup("Live data needs the web version", "Open this through the local preview or GitHub Pages so it can check traini.ac.")
+        : boardStateMarkup("Loading live departures", "Checking traini.ac before showing any trains.", true);
     }
 
     function renderBackOld(now) {
@@ -1317,12 +1311,18 @@
       const checkedAt = liveBoard?.checkedAt ? new Date(liveBoard.checkedAt) : null;
       const updatedLabel = checkedAt
         ? "Data from API " + timeFormat.format(updatedAt) + " · page opened " + timeFormat.format(checkedAt)
-        : "Updated " + timeFormat.format(updatedAt);
+        : boardState === "loading"
+          ? "Loading live data"
+          : "Updated " + timeFormat.format(updatedAt);
       els.clockTime.textContent = timeFormat.format(now);
       els.clockDate.textContent = dateFormat.format(now);
       els.outUpdated.textContent = updatedLabel;
       els.backUpdated.textContent = updatedLabel;
-      els.footerStatus.textContent = liveBoard?.source ? "Live via " + liveBoard.source : "Design draft";
+      els.footerStatus.textContent = liveBoard?.source
+        ? "Live via " + liveBoard.source
+        : boardState === "offline"
+          ? "Open web version for live data"
+          : "Checking live data";
       els.buildVersion.textContent = BUILD_VERSION;
       renderOut(now);
       renderBack(now);
@@ -1347,10 +1347,15 @@
           liveBoard = await buildDirectBoard();
         }
 
+        boardState = "live";
         render();
         const seconds = liveBoard.refreshAfterSeconds || 30;
         window.setTimeout(fetchLiveBoard, seconds * 1000);
       } catch (error) {
+        if (!liveBoard) {
+          boardState = "loading";
+          render();
+        }
         window.setTimeout(fetchLiveBoard, 60000);
       }
     }
