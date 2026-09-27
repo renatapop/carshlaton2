@@ -686,8 +686,9 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.27.2010";
-    const CACHE_TTL_MS = 60000;
+    const BUILD_VERSION = "v2026.09.27.2048";
+    const REFRESH_SECONDS = 180;
+    const CACHE_TTL_MS = 0;
     let boardState = window.location.protocol === "file:" ? "offline" : "loading";
     let liveBoard = null;
     let refreshTimer = null;
@@ -909,26 +910,40 @@
       });
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const response = await fetch(url, {
-          headers: { Accept: "application/json" },
-          cache: "no-store"
-        });
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 10000);
 
-        if (response.ok) {
-          return response.json();
-        }
+        try {
+          const response = await fetch(url, {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            signal: controller.signal
+          });
 
-        if ((response.status === 429 || response.status === 503) && attempt < maxAttempts - 1) {
-          try {
-            const error = await response.json();
-            await sleep(Number(error.retry_after_seconds || 1) * 1000);
-          } catch {
-            await sleep(1200);
+          if (response.ok) {
+            return response.json();
           }
-          continue;
-        }
 
-        throw new Error("traini.ac unavailable");
+          if ((response.status === 429 || response.status === 503) && attempt < maxAttempts - 1) {
+            try {
+              const error = await response.json();
+              await sleep(Number(error.retry_after_seconds || 1) * 1000);
+            } catch {
+              await sleep(1200);
+            }
+            continue;
+          }
+
+          throw new Error("traini.ac unavailable");
+        } catch (error) {
+          if (attempt < maxAttempts - 1) {
+            await sleep(1200);
+            continue;
+          }
+          throw error;
+        } finally {
+          window.clearTimeout(timeout);
+        }
       }
 
       throw new Error("traini.ac unavailable");
@@ -1217,7 +1232,7 @@
         source: "traini.ac",
         generatedAt: outboundBoard.generated_at || new Date().toISOString(),
         checkedAt: new Date().toISOString(),
-        refreshAfterSeconds: 60,
+        refreshAfterSeconds: REFRESH_SECONDS,
         outRoutes: directOutRoutesFromBoard(outboundBoard)
       };
     }
@@ -1235,19 +1250,16 @@
 
     async function buildDirectBackBoard(progressive = false) {
       const now = new Date();
-      const cachedStations = directBackOrigins
-        .map((origin) => cacheRead("back:" + origin.crs))
-        .filter(Boolean);
 
       if (progressive) {
         const startingStations = directBackOrigins.map((origin) =>
-          cachedStations.find((station) => station.crs === origin.crs) || backStationPlaceholder(origin)
+          backStationPlaceholder(origin)
         );
         mergeLiveBoard({
           source: "traini.ac",
           generatedAt: new Date().toISOString(),
           checkedAt: new Date().toISOString(),
-          refreshAfterSeconds: 60,
+          refreshAfterSeconds: REFRESH_SECONDS,
           backStations: startingStations,
           backRoutes: backRoutesFromStations(startingStations)
         });
@@ -1255,49 +1267,40 @@
         render();
       }
 
-      const freshStations = [...cachedStations];
+      const freshStations = [];
       let generatedAt = new Date().toISOString();
 
       for (const origin of directBackOrigins) {
-        try {
-          const result = await buildDirectBackStation(origin, now);
-          generatedAt = result.generatedAt || generatedAt;
-          cacheWrite("back:" + origin.crs, result.station);
-          const index = freshStations.findIndex((station) => station.crs === origin.crs);
-          if (index >= 0) {
-            freshStations[index] = result.station;
-          } else {
-            freshStations.push(result.station);
-          }
-          if (progressive) {
-            mergeBackStation(result.station);
-            liveBoard.generatedAt = generatedAt;
-            render();
-          }
-        } catch {
-          if (!cachedStations.some((station) => station.crs === origin.crs) && progressive) {
-            mergeBackStation(backStationUnavailable(origin));
-            render();
-          }
+        const result = await buildDirectBackStation(origin, now);
+        generatedAt = result.generatedAt || generatedAt;
+        freshStations.push(result.station);
+        if (progressive) {
+          mergeBackStation(result.station);
+          liveBoard.generatedAt = generatedAt;
+          render();
         }
       }
 
+      if (freshStations.length !== directBackOrigins.length) {
+        throw new Error("traini.ac unavailable");
+      }
+
       const backStationsLive = directBackOrigins.map((origin) =>
-        freshStations.find((station) => station.crs === origin.crs) || backStationUnavailable(origin)
+        freshStations.find((station) => station.crs === origin.crs) || backStationPlaceholder(origin)
       );
 
       return {
         source: "traini.ac",
         generatedAt,
         checkedAt: new Date().toISOString(),
-        refreshAfterSeconds: 60,
+        refreshAfterSeconds: REFRESH_SECONDS,
         backStations: backStationsLive,
         backRoutes: backRoutesFromStations(backStationsLive)
       };
     }
 
     async function buildDirectBoard(view = currentView()) {
-      return view === "back" ? buildDirectBackBoard(true) : buildDirectOutBoard();
+      return view === "back" ? buildDirectBackBoard(false) : buildDirectOutBoard();
     }
 
     function nextService(now, config) {
@@ -1366,6 +1369,11 @@
     }
 
     function renderOut(now) {
+      if (boardState === "error" && !hasLiveData("out")) {
+        els.outCards.innerHTML = boardStateMarkup("Live data paused", "traini.ac is busy or rate-limiting this board. Retrying shortly.");
+        return;
+      }
+
       if (liveBoard && Array.isArray(liveBoard.outRoutes)) {
         els.outCards.innerHTML = liveBoard.outRoutes.map((route) => {
           const departureDate = route.departureIso ? new Date(route.departureIso) : null;
@@ -1402,10 +1410,17 @@
 
       els.outCards.innerHTML = boardState === "offline"
         ? boardStateMarkup("Live data needs the web version", "Open this through the local preview or GitHub Pages so it can check traini.ac.")
+        : boardState === "error"
+          ? boardStateMarkup("Live data paused", "traini.ac is busy or rate-limiting this board. Retrying shortly.")
         : boardStateMarkup("Loading live departures", "Checking traini.ac before showing any trains.", true);
     }
 
     function renderBack(now) {
+      if (boardState === "error" && !hasLiveData("back")) {
+        els.backCards.innerHTML = boardStateMarkup("Live data paused", "traini.ac is busy or rate-limiting this board. Retrying shortly.");
+        return;
+      }
+
       if (liveBoard && Array.isArray(liveBoard.backRoutes)) {
         els.backCards.innerHTML = liveBoard.backRoutes.map((route) => {
           const rows = route.stations.map((origin) => `
@@ -1442,6 +1457,8 @@
 
       els.backCards.innerHTML = boardState === "offline"
         ? boardStateMarkup("Live data needs the web version", "Open this through the local preview or GitHub Pages so it can check traini.ac.")
+        : boardState === "error"
+          ? boardStateMarkup("Live data paused", "traini.ac is busy or rate-limiting this board. Retrying shortly.")
         : boardStateMarkup("Loading live departures", "Checking traini.ac before showing any trains.", true);
     }
 
@@ -1547,22 +1564,10 @@
       try {
         const canUseLocalApi = ["127.0.0.1", "localhost"].includes(window.location.hostname);
         let partialBoard;
-        const cachedBoard = cacheRead("view:" + view);
 
-        if (cachedBoard) {
-          mergeLiveBoard(cachedBoard);
-          boardState = "live";
-          render();
-          window.clearTimeout(refreshTimer);
-          refreshTimer = window.setTimeout(() => fetchLiveBoard(currentView()), cachedBoard.refreshAfterSeconds * 1000 || 60000);
-          return;
-        }
-
-        if (view === "back") {
-          partialBoard = await buildDirectBackBoard(true);
-        } else if (canUseLocalApi) {
+        if (canUseLocalApi) {
           try {
-            const response = await fetch("/api/board?view=" + encodeURIComponent(view), { cache: "no-store" });
+            const response = await fetch("/api/board?view=" + encodeURIComponent(view) + "&fresh=" + Date.now(), { cache: "no-store" });
             if (!response.ok) {
               if (response.status === 404) {
                 throw new Error("Local API missing");
@@ -1583,9 +1588,6 @@
         }
 
         mergeLiveBoard(partialBoard);
-        if (view !== "back" || partialBoard.backStations.every((station) => !station.unavailable)) {
-          cacheWrite("view:" + view, partialBoard);
-        }
         boardState = "live";
         render();
         const seconds = liveBoard.refreshAfterSeconds || 30;
@@ -1593,7 +1595,7 @@
         refreshTimer = window.setTimeout(() => fetchLiveBoard(currentView()), seconds * 1000);
       } catch (error) {
         if (!hasLiveData(view)) {
-          boardState = "loading";
+          boardState = "error";
           render();
         }
         window.clearTimeout(refreshTimer);
