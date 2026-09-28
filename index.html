@@ -254,6 +254,14 @@
       font-weight: 700;
     }
 
+    .notice a {
+      color: inherit;
+      font-weight: 750;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
     .notice.warn {
       border-color: rgba(183, 91, 85, 0.22);
       background: rgba(183, 91, 85, 0.07);
@@ -848,7 +856,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.28.1552";
+    const BUILD_VERSION = "v2026.09.28.1624";
     const REFRESH_SECONDS = 30;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -1701,12 +1709,21 @@
       if (!element || !note) return;
       element.className = "notice " + (note.type || "muted");
       element.textContent = note.text;
+      if (note.url) {
+        const link = document.createElement("a");
+        link.href = note.url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = note.linkText || "National Rail";
+        element.append(" ");
+        element.append(link);
+      }
     }
 
     function updateRailAlertNotes() {
       const quiet = {
         type: "good",
-        text: "No issues with les trains"
+        text: "No issues on les trains"
       };
       const checkingOut = {
         type: "muted",
