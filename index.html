@@ -814,7 +814,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.28.0920";
+    const BUILD_VERSION = "v2026.09.28.0934";
     const REFRESH_SECONDS = 180;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -1381,31 +1381,27 @@
       const optionsByCrs = new Map(stationOptions.map((station) => [station.crs, station]));
 
       return directBackGroups.map((route) => {
-        const journeysByKey = new Map();
+        const anchorCrs = route.origins[0];
+        const anchorOptions = optionsByCrs.get(anchorCrs)?.options || [];
+        const journeys = anchorOptions.slice(0, 2).map((anchorOption) => {
+          const key = anchorOption.arrivalIso || anchorOption.arrivalTime;
+          const boardings = route.origins.map((crs) => {
+            const station = optionsByCrs.get(crs);
+            return (station?.options || []).find((option) =>
+              (option.arrivalIso || option.arrivalTime) === key
+            );
+          }).filter(Boolean).sort((a, b) => {
+            const aTime = dateForIso(a.departureIso);
+            const bTime = dateForIso(b.departureIso);
+            return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
+          });
 
-        route.origins.forEach((crs) => {
-          const station = optionsByCrs.get(crs);
-          (station?.options || []).forEach((option) => {
-            const key = option.arrivalIso || option.arrivalTime || option.departureIso || option.departureTime;
-            if (!journeysByKey.has(key)) {
-              journeysByKey.set(key, {
-                arrivalIso: option.arrivalIso,
-                arrivalTime: option.arrivalTime,
-                statusType: option.statusType,
-                statusLabel: option.statusLabel,
-                boardings: []
-              });
-            }
-
-            const journey = journeysByKey.get(key);
-            if (option.statusType === "cancelled") {
-              journey.statusType = "cancelled";
-              journey.statusLabel = "Cancelled";
-            } else if (option.statusType === "delay" && journey.statusType !== "cancelled") {
-              journey.statusType = "delay";
-              journey.statusLabel = option.statusLabel;
-            }
-            journey.boardings.push({
+          return {
+            arrivalIso: anchorOption.arrivalIso,
+            arrivalTime: anchorOption.arrivalTime,
+            statusType: anchorOption.statusType,
+            statusLabel: anchorOption.statusLabel,
+            boardings: boardings.map((option) => ({
               station: option.station,
               crs: option.crs,
               departureTime: option.departureTime,
@@ -1413,25 +1409,9 @@
               platform: option.platform,
               statusType: option.statusType,
               statusLabel: option.statusLabel
-            });
-          });
+            }))
+          };
         });
-
-        const journeys = [...journeysByKey.values()]
-          .map((journey) => ({
-            ...journey,
-            boardings: journey.boardings.sort((a, b) => {
-              const aTime = dateForIso(a.departureIso);
-              const bTime = dateForIso(b.departureIso);
-              return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
-            })
-          }))
-          .sort((a, b) => {
-            const aTime = dateForIso(a.arrivalIso);
-            const bTime = dateForIso(b.arrivalIso);
-            return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
-          })
-          .slice(0, 2);
 
         return {
           name: route.name,
