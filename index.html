@@ -255,8 +255,11 @@
     }
 
     .notice a {
-      color: inherit;
-      font-weight: 750;
+      display: block;
+      width: fit-content;
+      margin-top: 6px;
+      color: #0645ad;
+      font-weight: 500;
       text-decoration: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 3px;
@@ -856,7 +859,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.28.1624";
+    const BUILD_VERSION = "v2026.09.28.1631";
     const REFRESH_SECONDS = 30;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
