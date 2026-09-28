@@ -333,6 +333,33 @@
       align-items: start;
     }
 
+    .service-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .service-option,
+    .return-journey {
+      display: grid;
+      gap: 12px;
+      padding: 13px 12px;
+      border-radius: 6px;
+      background: #f7fafb;
+    }
+
+    .service-option + .service-option,
+    .return-journey + .return-journey {
+      border-top: 1px solid var(--line);
+    }
+
+    .service-topline,
+    .journey-topline {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 12px;
+    }
+
     .departure {
       display: grid;
       gap: 5px;
@@ -380,6 +407,24 @@
     .arrivals {
       display: grid;
       gap: 8px;
+    }
+
+    .service-option .arrivals {
+      gap: 6px;
+    }
+
+    .service-option .big-time {
+      font-size: clamp(2rem, 5vw, 3.65rem);
+    }
+
+    .service-option .leave-value {
+      font-size: clamp(1rem, 2.35vw, 1.48rem);
+    }
+
+    .service-option .arrival-row {
+      min-height: 36px;
+      padding: 7px 10px;
+      background: rgba(255, 255, 255, 0.74);
     }
 
     .arrival-row,
@@ -447,6 +492,30 @@
     .return-route-list {
       display: grid;
       gap: 9px;
+    }
+
+    .journey-boardings {
+      display: grid;
+      gap: 7px;
+    }
+
+    .journey-boarding-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 40px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .journey-boarding-row strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(0.95rem, 1.8vw, 1.08rem);
     }
 
     .return-station-row {
@@ -614,6 +683,16 @@
         grid-template-columns: minmax(0, 1fr) auto;
       }
 
+      .service-topline,
+      .journey-topline,
+      .journey-boarding-row {
+        grid-template-columns: 1fr;
+      }
+
+      .journey-boarding-row {
+        align-items: start;
+      }
+
       .return-mini.arrival-cell {
         grid-column: 1 / -1;
       }
@@ -686,7 +765,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.27.2048";
+    const BUILD_VERSION = "v2026.09.28.0845";
     const REFRESH_SECONDS = 180;
     const CACHE_TTL_MS = 0;
     let boardState = window.location.protocol === "file:" ? "offline" : "loading";
@@ -1014,6 +1093,11 @@
         return { statusType: "delay", statusLabel: "Delayed", delayMinutes: null };
       }
 
+      const statusText = String(service.status_text || "").toLowerCase();
+      if ((!service.expected_departs && !service.expected_arrives) || statusText.includes("no live report") || service.data_source === "timetable") {
+        return { statusType: "good", statusLabel: "Scheduled", delayMinutes: null };
+      }
+
       return { statusType: "good", statusLabel: "On time", delayMinutes: 0 };
     }
 
@@ -1021,8 +1105,7 @@
       if (service.status === "cancelled") return true;
       if (service.expected_departs || service.expected_arrives) return true;
       if (Number.isFinite(service.lateness_minutes)) return true;
-      if (String(service.status_text || "").toLowerCase().includes("no live report")) return false;
-      return service.data_source !== "timetable";
+      return true;
     }
 
     function hasEngineeringWorkPattern(board) {
@@ -1048,11 +1131,22 @@
       return point ? displayIsoTime(point.expected || point.scheduled) : null;
     }
 
-    function normalizeDirectOutRoute(name, service, stops, accent) {
+    function sortedUpcomingServices(services, now, minimumLeadMinutes = 0) {
+      return services
+        .map((service) => ({
+          service,
+          departureDate: dateForIso(liveDepartureIso(service))
+        }))
+        .filter(({ departureDate }) =>
+          departureDate && departureDate.getTime() - now.getTime() > minimumLeadMinutes * 60000
+        )
+        .sort((a, b) => a.departureDate - b.departureDate)
+        .map(({ service }) => service);
+    }
+
+    function normalizeDirectOutService(service, stops) {
       if (!service) {
         return {
-          name,
-          accent,
           platform: "Platform TBC",
           departureTime: "TBC",
           departureIso: null,
@@ -1067,8 +1161,6 @@
       const departureIso = liveDepartureIso(service);
 
       return {
-        name,
-        accent,
         platform: platformLabel(service.platform),
         departureTime: displayIsoTime(departureIso),
         departureIso,
@@ -1077,6 +1169,20 @@
           const point = directFindPoint(service, stop.crs);
           return { name: stop.name, time: pointTime(point) || "TBC" };
         })
+      };
+    }
+
+    function normalizeDirectOutRoute(name, services, stops, accent) {
+      const options = services.slice(0, 2).map((service) => normalizeDirectOutService(service, stops));
+      if (!options.length) {
+        options.push(normalizeDirectOutService(null, stops));
+      }
+
+      return {
+        name,
+        accent,
+        services: options,
+        ...options[0]
       };
     }
 
@@ -1114,19 +1220,10 @@
       };
     }
 
-    function selectDirectBackService(origin, board, now) {
+    function selectDirectBackServices(origin, board, now) {
       const services = livePassengerServices(board);
       const minimumLeadMinutes = returnMinimumLeadMinutes[origin.crs] || 0;
-
-      if (!minimumLeadMinutes) {
-        return services[0];
-      }
-
-      return services.find((service) => {
-        const departure = dateForIso(liveDepartureIso(service));
-        if (!departure) return false;
-        return departure.getTime() - now.getTime() > minimumLeadMinutes * 60000;
-      });
+      return sortedUpcomingServices(services, now, minimumLeadMinutes).slice(0, 2);
     }
 
     function backStationPlaceholder(origin) {
@@ -1172,6 +1269,70 @@
       }));
     }
 
+    function backRoutesFromStationOptions(stationOptions) {
+      const optionsByCrs = new Map(stationOptions.map((station) => [station.crs, station]));
+
+      return directBackGroups.map((route) => {
+        const journeysByKey = new Map();
+
+        route.origins.forEach((crs) => {
+          const station = optionsByCrs.get(crs);
+          (station?.options || []).forEach((option) => {
+            const key = option.arrivalIso || option.arrivalTime || option.departureIso || option.departureTime;
+            if (!journeysByKey.has(key)) {
+              journeysByKey.set(key, {
+                arrivalIso: option.arrivalIso,
+                arrivalTime: option.arrivalTime,
+                statusType: option.statusType,
+                statusLabel: option.statusLabel,
+                boardings: []
+              });
+            }
+
+            const journey = journeysByKey.get(key);
+            if (option.statusType === "cancelled") {
+              journey.statusType = "cancelled";
+              journey.statusLabel = "Cancelled";
+            } else if (option.statusType === "delay" && journey.statusType !== "cancelled") {
+              journey.statusType = "delay";
+              journey.statusLabel = option.statusLabel;
+            }
+            journey.boardings.push({
+              station: option.station,
+              crs: option.crs,
+              departureTime: option.departureTime,
+              departureIso: option.departureIso,
+              platform: option.platform,
+              statusType: option.statusType,
+              statusLabel: option.statusLabel
+            });
+          });
+        });
+
+        const journeys = [...journeysByKey.values()]
+          .map((journey) => ({
+            ...journey,
+            boardings: journey.boardings.sort((a, b) => {
+              const aTime = dateForIso(a.departureIso);
+              const bTime = dateForIso(b.departureIso);
+              return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
+            })
+          }))
+          .sort((a, b) => {
+            const aTime = dateForIso(a.arrivalIso);
+            const bTime = dateForIso(b.arrivalIso);
+            return (aTime?.getTime() || 0) - (bTime?.getTime() || 0);
+          })
+          .slice(0, 2);
+
+        return {
+          name: route.name,
+          accent: route.accent,
+          journeys
+        };
+      });
+    }
+
     function mergeBackStation(station) {
       const existing = Array.isArray(liveBoard?.backStations) ? liveBoard.backStations : [];
       const stationsByCrs = new Map(existing.map((item) => [item.crs, item]));
@@ -1190,21 +1351,23 @@
     }
 
     function directOutRoutesFromBoard(outboundBoard) {
+      const now = new Date();
       const outbound = livePassengerServices(outboundBoard);
-      const victoriaService = outbound.find((service) =>
+      const walkLeadMinutes = Math.max(0, WALK_MINUTES - 2);
+      const victoriaServices = sortedUpcomingServices(outbound.filter((service) =>
         directDestinationMatches(service, CRS.victoria) || directHasCallingPoint(service, CRS.victoria)
-      );
-      const stAlbansService = outbound.find((service) =>
+      ), now, walkLeadMinutes).slice(0, 2);
+      const stAlbansServices = sortedUpcomingServices(outbound.filter((service) =>
         directDestinationMatches(service, CRS.stAlbans) ||
         [CRS.elephant, CRS.cityThameslink, CRS.farringdon, CRS.stPancrasThameslink, CRS.stAlbans].some((crs) =>
           directHasCallingPoint(service, crs)
         )
-      );
+      ), now, walkLeadMinutes).slice(0, 2);
 
       return [
         normalizeDirectOutRoute(
           "Victoria",
-          victoriaService,
+          victoriaServices,
           [
             { name: "Balham", crs: CRS.balham },
             { name: "London Victoria", crs: CRS.victoria }
@@ -1213,7 +1376,7 @@
         ),
         normalizeDirectOutRoute(
           "St Albans line",
-          stAlbansService,
+          stAlbansServices,
           [
             { name: "Elephant & Castle", crs: CRS.elephant },
             { name: "City Thameslink", crs: CRS.cityThameslink },
@@ -1242,8 +1405,14 @@
         limit: 20,
         calling_at: CRS.carshalton
       }, 1);
+      const services = selectDirectBackServices(origin, board, now);
       return {
-        station: normalizeDirectBackStation(origin, selectDirectBackService(origin, board, now)),
+        station: {
+          station: origin.station,
+          crs: origin.crs,
+          accent: origin.accent,
+          options: services.map((service) => normalizeDirectBackStation(origin, service))
+        },
         generatedAt: board.generated_at || new Date().toISOString()
       };
     }
@@ -1295,7 +1464,7 @@
         checkedAt: new Date().toISOString(),
         refreshAfterSeconds: REFRESH_SECONDS,
         backStations: backStationsLive,
-        backRoutes: backRoutesFromStations(backStationsLive)
+        backRoutes: backRoutesFromStationOptions(backStationsLive)
       };
     }
 
@@ -1376,31 +1545,40 @@
 
       if (liveBoard && Array.isArray(liveBoard.outRoutes)) {
         els.outCards.innerHTML = liveBoard.outRoutes.map((route) => {
-          const departureDate = route.departureIso ? new Date(route.departureIso) : null;
-          const rows = (route.arrivals || []).map((arrival) => `
-            <div class="arrival-row">
-              <span>${arrival.name}</span>
-              <span class="arrival-time">${arrival.time}</span>
-            </div>
-          `).join("");
+          const services = route.services || [route];
+          const serviceCards = services.map((service, index) => {
+            const departureDate = service.departureIso ? new Date(service.departureIso) : null;
+            const rows = (service.arrivals || []).map((arrival) => `
+              <div class="arrival-row">
+                <span>${arrival.name}</span>
+                <span class="arrival-time">${arrival.time}</span>
+              </div>
+            `).join("");
+
+            return `
+              <div class="service-option">
+                <div class="service-topline">
+                  <div class="departure">
+                    <span class="label">${index === 0 ? "Next train" : "Train after"}</span>
+                    <span class="big-time">${service.departureTime}</span>
+                  </div>
+                  <span class="pill ${statusClass(service.statusType)}">${service.statusLabel} | ${service.platform}</span>
+                </div>
+                <div class="leave-box">
+                  <div class="leave-value">${liveLeaveText(service, departureDate, now)}</div>
+                </div>
+                <div class="arrivals">${rows}</div>
+              </div>
+            `;
+          }).join("");
 
           return `
             <article class="route-card" style="--accent:${route.accent || "var(--blue)"}">
               <div class="card-main">
                 <div class="route-title">
                   <h3>${route.name}</h3>
-                  <span class="pill ${statusClass(route.statusType)}">${route.statusLabel} | ${route.platform}</span>
                 </div>
-                <div class="primary-times">
-                  <div class="departure">
-                    <span class="label">Departs Carshalton</span>
-                    <span class="big-time">${route.departureTime}</span>
-                  </div>
-                  <div class="leave-box">
-                    <div class="leave-value">${liveLeaveText(route, departureDate, now)}</div>
-                  </div>
-                </div>
-                <div class="arrivals">${rows}</div>
+                <div class="service-list">${serviceCards}</div>
               </div>
             </article>
           `;
@@ -1423,22 +1601,45 @@
 
       if (liveBoard && Array.isArray(liveBoard.backRoutes)) {
         els.backCards.innerHTML = liveBoard.backRoutes.map((route) => {
-          const rows = route.stations.map((origin) => `
-            <div class="return-station-row">
-              <div class="return-station">
-                <span class="mini-label">From</span>
-                <strong>${origin.station}</strong>
+          const rows = Array.isArray(route.journeys) ? route.journeys.map((journey, index) => {
+            const boardings = journey.boardings.map((boarding) => `
+              <div class="journey-boarding-row">
+                <strong>${boarding.station}</strong>
+                <span class="return-time">${boarding.departureTime}</span>
+                <span class="pill ${statusClass(boarding.statusType)}">${boarding.platform ? boarding.statusLabel + " | " + boarding.platform : boarding.statusLabel}</span>
               </div>
-              <div class="return-mini">
-                <span class="mini-label">Departs</span>
-                <strong>${origin.departureTime}</strong>
+            `).join("");
+
+            return `
+              <div class="return-journey">
+                <div class="journey-topline">
+                  <div>
+                    <span class="mini-label">${index === 0 ? "Next train" : "Train after"}</span>
+                    <div class="journey-boardings">${boardings}</div>
+                  </div>
+                  <div class="return-mini arrival-cell">
+                    <span class="mini-label">Arrives Carshalton</span>
+                    <strong>${journey.arrivalTime}</strong>
+                  </div>
+                </div>
               </div>
-              <div class="return-mini arrival-cell">
-                <span class="mini-label">Arrives Carshalton</span>
-                <strong>${origin.arrivalTime}</strong>
+            `;
+          }).join("") : route.stations.map((origin) => `
+              <div class="return-station-row">
+                <div class="return-station">
+                  <span class="mini-label">From</span>
+                  <strong>${origin.station}</strong>
+                </div>
+                <div class="return-mini">
+                  <span class="mini-label">Departs</span>
+                  <strong>${origin.departureTime}</strong>
+                </div>
+                <div class="return-mini arrival-cell">
+                  <span class="mini-label">Arrives Carshalton</span>
+                  <strong>${origin.arrivalTime}</strong>
+                </div>
+                <span class="pill ${statusClass(origin.statusType)}">${origin.platform ? origin.statusLabel + " | " + origin.platform : origin.statusLabel}</span>
               </div>
-              <span class="pill ${statusClass(origin.statusType)}">${origin.platform ? origin.statusLabel + " | " + origin.platform : origin.statusLabel}</span>
-            </div>
           `).join("");
 
           return `
