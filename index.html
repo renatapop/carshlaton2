@@ -259,6 +259,12 @@
       background: rgba(183, 91, 85, 0.07);
     }
 
+    .notice.severe {
+      border-color: rgba(183, 91, 85, 0.34);
+      background: rgba(183, 91, 85, 0.12);
+      color: var(--red);
+    }
+
     .notice.good {
       border-color: rgba(52, 125, 91, 0.18);
       background: rgba(52, 125, 91, 0.08);
@@ -842,7 +848,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.28.1518";
+    const BUILD_VERSION = "v2026.09.28.1552";
     const REFRESH_SECONDS = 30;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -1615,52 +1621,14 @@
         if (rainIndex >= 0) {
           weatherNote = {
             type: "warn",
-            text: "Bring umbrella: rain starts around " + timeFormat.format(new Date(hourly.time[rainIndex]))
+            text: "It's raining at " + timeFormat.format(new Date(hourly.time[rainIndex])) + "... grab ☂️"
           };
         } else {
-          weatherNote = { type: "good", text: "No rain expected today" };
+          weatherNote = { type: "good", text: "No umbrella needed 🏝️" };
         }
       } catch {
         weatherNote = { type: "muted", text: "Weather unavailable right now" };
       }
-      renderNotices();
-    }
-
-    async function fetchRailAlertNote() {
-      try {
-        const [delayBoard, cancellationBoard] = await Promise.all([
-          trainiac("/delays", { min_minutes: 6, limit: 40, passenger_only: true }, 1),
-          trainiac("/cancellations", { limit: 40 }, 1)
-        ]);
-        const entries = [];
-
-        (delayBoard.results || []).forEach((item) => {
-          const line = lineFromRailItem(item);
-          if (!line) return;
-          entries.push({
-            key: "delay:" + (item.train_id || item.headcode || "") + ":" + line,
-            line,
-            type: "delay",
-            label: "+" + item.lateness_minutes + " min delay"
-          });
-        });
-
-        (cancellationBoard.results || []).forEach((item) => {
-          const line = lineFromRailItem(item);
-          if (!line) return;
-          entries.push({
-            key: "cancel:" + (item.train_id || item.train_uid || item.headcode || "") + ":" + line,
-            line,
-            type: "cancel",
-            label: "cancellations today"
-          });
-        });
-
-        rememberRailAlerts(entries);
-      } catch {
-        // Keep the most recent remembered alert note if traini.ac is busy.
-      }
-      updateRailAlertNotes();
       renderNotices();
     }
 
@@ -1736,33 +1704,22 @@
     }
 
     function updateRailAlertNotes() {
-      const history = readRailAlertHistory();
-      const byLine = new Map();
-      history.forEach((item) => {
-        if (!byLine.has(item.line)) byLine.set(item.line, []);
-        byLine.get(item.line).push(item);
-      });
-
-      const lines = [...byLine.keys()];
-      if (!lines.length) {
-        const quiet = {
-          type: "muted",
-          text: "No big delays seen on these lines in checks from the last 24h"
-        };
-        railAlertNote = { out: quiet, back: quiet };
-        return;
-      }
-
-      const lineText = lines.map((line) => {
-        const labels = [...new Set(byLine.get(line).map((item) => item.label))].slice(0, 2).join(", ");
-        return line + " (" + labels + ")";
-      }).join("; ");
-
-      const note = {
-        type: "warn",
-        text: "Big delays or cancellations seen in recent checks: " + lineText
+      const quiet = {
+        type: "good",
+        text: "No notable delays or cancellations on these trains right now"
       };
-      railAlertNote = { out: note, back: note };
+      const checkingOut = {
+        type: "muted",
+        text: "Checking heading out rail conditions"
+      };
+      const checkingBack = {
+        type: "muted",
+        text: "Checking heading back rail conditions"
+      };
+      railAlertNote = {
+        out: liveBoard?.railHealth?.out || (boardState === "live" ? quiet : checkingOut),
+        back: liveBoard?.railHealth?.back || (boardState === "live" ? quiet : checkingBack)
+      };
     }
 
     function renderNotices() {
@@ -1964,6 +1921,10 @@
       liveBoard = {
         ...(liveBoard || {}),
         ...partial,
+        railHealth: {
+          ...(liveBoard?.railHealth || {}),
+          ...(partial.railHealth || {})
+        },
         source: partial.source || liveBoard?.source,
         generatedAt: partial.generatedAt || liveBoard?.generatedAt,
         checkedAt: partial.checkedAt || new Date().toISOString(),
@@ -2022,7 +1983,6 @@
         const partialBoard = await fetchWorkerBoard(view);
 
         mergeLiveBoard(partialBoard);
-        fetchRailAlertNote();
         lastRefreshError = null;
         boardState = "live";
         render();
@@ -2068,7 +2028,6 @@
     setInterval(render, 1000);
 
     fetchWeatherNote();
-    fetchRailAlertNote();
     window.setInterval(fetchWeatherNote, 30 * 60 * 1000);
     fetchLiveBoard(currentView());
     window.setTimeout(() => window.location.reload(), 6 * 60 * 60 * 1000);
