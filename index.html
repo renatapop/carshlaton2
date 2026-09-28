@@ -201,6 +201,48 @@
       white-space: nowrap;
     }
 
+    .notice-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .notice {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--text);
+      box-shadow: 0 10px 24px rgba(35, 54, 68, 0.06);
+      font-size: clamp(0.9rem, 1.7vw, 1rem);
+      font-weight: 620;
+    }
+
+    .notice strong {
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .notice.warn {
+      border-color: rgba(183, 91, 85, 0.22);
+      background: rgba(183, 91, 85, 0.07);
+    }
+
+    .notice.good {
+      border-color: rgba(52, 125, 91, 0.18);
+      background: rgba(52, 125, 91, 0.08);
+      color: var(--green);
+    }
+
+    .notice.muted {
+      color: var(--muted);
+      background: rgba(247, 250, 251, 0.86);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -746,6 +788,10 @@
         <h2 id="outHeading">Next trains from home</h2>
         <div class="updated" id="outUpdated">Updated --:--</div>
       </div>
+      <div class="notice-stack">
+        <div class="notice muted" id="weatherNotice">Checking London weather</div>
+        <div class="notice muted" id="outDisruptionNotice">Checking recent rail issues</div>
+      </div>
       <div class="grid" id="outCards"></div>
     </section>
 
@@ -753,6 +799,9 @@
       <div class="section-head">
         <h2 id="backHeading">Trains back to Carshalton</h2>
         <div class="updated" id="backUpdated">Updated --:--</div>
+      </div>
+      <div class="notice-stack">
+        <div class="notice muted" id="backDisruptionNotice">Checking recent rail issues</div>
       </div>
       <div class="return-grid" id="backCards"></div>
     </section>
@@ -765,11 +814,14 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.09.28.0845";
+    const BUILD_VERSION = "v2026.09.28.0920";
     const REFRESH_SECONDS = 180;
     const CACHE_TTL_MS = 0;
+    const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
     let boardState = window.location.protocol === "file:" ? "offline" : "loading";
     let liveBoard = null;
+    let weatherNote = { type: "muted", text: "Checking London weather" };
+    let railAlertNote = { out: null, back: null };
     let refreshTimer = null;
     const boardFetches = new Set();
 
@@ -892,6 +944,9 @@
       backUpdated: document.querySelector("#backUpdated"),
       outCards: document.querySelector("#outCards"),
       backCards: document.querySelector("#backCards"),
+      weatherNotice: document.querySelector("#weatherNotice"),
+      outDisruptionNotice: document.querySelector("#outDisruptionNotice"),
+      backDisruptionNotice: document.querySelector("#backDisruptionNotice"),
       footerStatus: document.querySelector("#footerStatus"),
       buildVersion: document.querySelector("#buildVersion")
     };
@@ -980,6 +1035,35 @@
       }
     }
 
+    function readRailAlertHistory() {
+      try {
+        const history = JSON.parse(window.localStorage.getItem("carshalton:rail-alert-history") || "[]");
+        return history.filter((item) => Date.now() - item.seenAt < RAIL_ALERT_WINDOW_MS);
+      } catch {
+        return [];
+      }
+    }
+
+    function writeRailAlertHistory(history) {
+      try {
+        window.localStorage.setItem("carshalton:rail-alert-history", JSON.stringify(history.slice(-60)));
+      } catch {
+        // Alert history is a convenience only.
+      }
+    }
+
+    function rememberRailAlerts(entries) {
+      if (!entries.length) return;
+      const history = readRailAlertHistory();
+      const seenKeys = new Set(history.map((item) => item.key));
+      entries.forEach((entry) => {
+        if (!seenKeys.has(entry.key)) {
+          history.push({ ...entry, seenAt: Date.now() });
+        }
+      });
+      writeRailAlertHistory(history.filter((item) => Date.now() - item.seenAt < RAIL_ALERT_WINDOW_MS));
+    }
+
     async function trainiac(path, params = {}, maxAttempts = 3) {
       const url = new URL(API_BASE + path);
       Object.entries(params).forEach(([key, value]) => {
@@ -1057,6 +1141,30 @@
     function displayIsoTime(value) {
       const date = dateForIso(value);
       return date ? timeFormat.format(date) : "TBC";
+    }
+
+    function classifyLine(value = "") {
+      const text = String(value).toLowerCase();
+      if (text.includes("thameslink") || text.includes("st albans") || text.includes("bedford") ||
+          text.includes("farringdon") || text.includes("city thameslink") || text.includes("st pancras") ||
+          text.includes("elephant")) {
+        return "St Albans line";
+      }
+      if (text.includes("southern") || text.includes("victoria") || text.includes("balham") ||
+          text.includes("sutton") || text.includes("epsom")) {
+        return "Victoria";
+      }
+      return null;
+    }
+
+    function lineFromRailItem(item) {
+      return classifyLine([
+        item.operator,
+        item.origin?.name || item.origin,
+        item.destination?.name || item.destination,
+        item.last_location,
+        item.reason
+      ].filter(Boolean).join(" "));
     }
 
     function liveDepartureIso(service) {
@@ -1353,16 +1461,15 @@
     function directOutRoutesFromBoard(outboundBoard) {
       const now = new Date();
       const outbound = livePassengerServices(outboundBoard);
-      const walkLeadMinutes = Math.max(0, WALK_MINUTES - 2);
       const victoriaServices = sortedUpcomingServices(outbound.filter((service) =>
         directDestinationMatches(service, CRS.victoria) || directHasCallingPoint(service, CRS.victoria)
-      ), now, walkLeadMinutes).slice(0, 2);
+      ), now).slice(0, 2);
       const stAlbansServices = sortedUpcomingServices(outbound.filter((service) =>
         directDestinationMatches(service, CRS.stAlbans) ||
         [CRS.elephant, CRS.cityThameslink, CRS.farringdon, CRS.stPancrasThameslink, CRS.stAlbans].some((crs) =>
           directHasCallingPoint(service, crs)
         )
-      ), now, walkLeadMinutes).slice(0, 2);
+      ), now).slice(0, 2);
 
       return [
         normalizeDirectOutRoute(
@@ -1472,6 +1579,80 @@
       return view === "back" ? buildDirectBackBoard(false) : buildDirectOutBoard();
     }
 
+    async function fetchWeatherNote() {
+      try {
+        const url = new URL("https://api.open-meteo.com/v1/forecast");
+        url.searchParams.set("latitude", "51.37");
+        url.searchParams.set("longitude", "-0.17");
+        url.searchParams.set("hourly", "precipitation_probability,precipitation,rain");
+        url.searchParams.set("timezone", "Europe/London");
+        url.searchParams.set("forecast_days", "1");
+
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("Weather unavailable");
+        const data = await response.json();
+        const hourly = data.hourly || {};
+        const now = new Date();
+        const rainIndex = (hourly.time || []).findIndex((time, index) => {
+          const date = new Date(time);
+          const probability = Number(hourly.precipitation_probability?.[index] || 0);
+          const precipitation = Number(hourly.precipitation?.[index] || 0);
+          const rain = Number(hourly.rain?.[index] || 0);
+          return date >= now && (probability >= 45 || precipitation > 0.1 || rain > 0.1);
+        });
+
+        if (rainIndex >= 0) {
+          weatherNote = {
+            type: "warn",
+            text: "Bring umbrella: rain starts around " + timeFormat.format(new Date(hourly.time[rainIndex]))
+          };
+        } else {
+          weatherNote = { type: "good", text: "No rain expected today" };
+        }
+      } catch {
+        weatherNote = { type: "muted", text: "Weather unavailable right now" };
+      }
+      renderNotices();
+    }
+
+    async function fetchRailAlertNote() {
+      try {
+        const [delayBoard, cancellationBoard] = await Promise.all([
+          trainiac("/delays", { min_minutes: 6, limit: 40, passenger_only: true }, 1),
+          trainiac("/cancellations", { limit: 40 }, 1)
+        ]);
+        const entries = [];
+
+        (delayBoard.results || []).forEach((item) => {
+          const line = lineFromRailItem(item);
+          if (!line) return;
+          entries.push({
+            key: "delay:" + (item.train_id || item.headcode || "") + ":" + line,
+            line,
+            type: "delay",
+            label: "+" + item.lateness_minutes + " min delay"
+          });
+        });
+
+        (cancellationBoard.results || []).forEach((item) => {
+          const line = lineFromRailItem(item);
+          if (!line) return;
+          entries.push({
+            key: "cancel:" + (item.train_id || item.train_uid || item.headcode || "") + ":" + line,
+            line,
+            type: "cancel",
+            label: "cancellations today"
+          });
+        });
+
+        rememberRailAlerts(entries);
+      } catch {
+        // Keep the most recent remembered alert note if traini.ac is busy.
+      }
+      updateRailAlertNotes();
+      renderNotices();
+    }
+
     function nextService(now, config) {
       const currentMinute = new Date(now);
       currentMinute.setSeconds(0, 0);
@@ -1535,6 +1716,49 @@
           </div>
         </div>
       `;
+    }
+
+    function setNotice(element, note) {
+      if (!element || !note) return;
+      element.className = "notice " + (note.type || "muted");
+      element.textContent = note.text;
+    }
+
+    function updateRailAlertNotes() {
+      const history = readRailAlertHistory();
+      const byLine = new Map();
+      history.forEach((item) => {
+        if (!byLine.has(item.line)) byLine.set(item.line, []);
+        byLine.get(item.line).push(item);
+      });
+
+      const lines = [...byLine.keys()];
+      if (!lines.length) {
+        const quiet = {
+          type: "muted",
+          text: "No big delays seen on these lines in checks from the last 24h"
+        };
+        railAlertNote = { out: quiet, back: quiet };
+        return;
+      }
+
+      const lineText = lines.map((line) => {
+        const labels = [...new Set(byLine.get(line).map((item) => item.label))].slice(0, 2).join(", ");
+        return line + " (" + labels + ")";
+      }).join("; ");
+
+      const note = {
+        type: "warn",
+        text: "Big delays or cancellations seen in recent checks: " + lineText
+      };
+      railAlertNote = { out: note, back: note };
+    }
+
+    function renderNotices() {
+      setNotice(els.weatherNotice, weatherNote);
+      updateRailAlertNotes();
+      setNotice(els.outDisruptionNotice, railAlertNote.out);
+      setNotice(els.backDisruptionNotice, railAlertNote.back);
     }
 
     function renderOut(now) {
@@ -1755,6 +1979,7 @@
           ? "Open web version for live data"
           : "Checking live data";
       els.buildVersion.textContent = BUILD_VERSION;
+      renderNotices();
       renderOut(now);
       renderBack(now);
     }
@@ -1789,6 +2014,7 @@
         }
 
         mergeLiveBoard(partialBoard);
+        fetchRailAlertNote();
         boardState = "live";
         render();
         const seconds = liveBoard.refreshAfterSeconds || 30;
@@ -1818,6 +2044,9 @@
     setInterval(render, 20000);
 
     if (window.location.protocol !== "file:") {
+      fetchWeatherNote();
+      fetchRailAlertNote();
+      window.setInterval(fetchWeatherNote, 30 * 60 * 1000);
       fetchLiveBoard(currentView());
       window.setTimeout(() => window.location.reload(), 6 * 60 * 60 * 1000);
     }
