@@ -523,7 +523,8 @@
       background: #f7fafb;
     }
 
-    .arrival-row span:first-child,
+    .arrival-destination > span,
+    .boarding-station strong,
     .return-row span:first-child {
       min-width: 0;
       overflow: hidden;
@@ -532,6 +533,29 @@
       color: #2a3440;
       font-size: clamp(0.95rem, 1.8vw, 1.08rem);
       font-weight: 600;
+    }
+
+    .arrival-destination,
+    .boarding-station {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .tube-note {
+      color: var(--red);
+      font-size: clamp(0.72rem, 1.45vw, 0.82rem);
+      font-weight: 700;
+      line-height: 1.18;
+      white-space: normal;
+    }
+
+    .tube-note.muted {
+      color: var(--muted);
+    }
+
+    .tube-note.good {
+      color: var(--green);
     }
 
     .arrival-time,
@@ -857,7 +881,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.01.0905";
+    const BUILD_VERSION = "v2026.10.09.1512";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -875,8 +899,8 @@
         alt: "Train into London"
       },
       back: {
-        src: "https://media.rightmove.co.uk/property-photo/b298c7e7b/164272481/b298c7e7bdfc0c2a29482e5b46278ce1.jpeg",
-        alt: "Home"
+        src: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fe/ec/81/the-greyhound-carshalton.jpg?w=1400&h=-1&s=1",
+        alt: "The Greyhound in Carshalton"
       }
     };
 
@@ -1694,6 +1718,15 @@
       return departureDate ? leaveText(now, departureDate) : "Check board";
     }
 
+    function tubeMarkup(tube) {
+      if (!tube) return "";
+      const classes = ["tube-note"];
+      if (tube.statusType === "muted") classes.push("muted");
+      if (tube.statusType === "good") classes.push("good");
+      const reason = tube.reason ? " - " + tube.reason : "";
+      return `<span class="${classes.join(" ")}">${tube.name}: ${tube.statusLabel}${reason}</span>`;
+    }
+
     function boardStateMarkup(title, copy, isLoading = false) {
       return `
         <div class="board-state" role="status" aria-live="polite">
@@ -1760,7 +1793,10 @@
             const departureDate = service.departureIso ? new Date(service.departureIso) : null;
             const rows = (service.arrivals || []).map((arrival) => `
               <div class="arrival-row">
-                <span>${arrival.name}</span>
+                <div class="arrival-destination">
+                  <span>${arrival.name}</span>
+                  ${tubeMarkup(arrival.tube)}
+                </div>
                 <span class="arrival-time">${arrival.time}</span>
               </div>
             `).join("");
@@ -1814,7 +1850,10 @@
           const rows = Array.isArray(route.journeys) ? route.journeys.map((journey, index) => {
             const boardings = journey.boardings.map((boarding) => `
               <div class="journey-boarding-row">
-                <strong>${boarding.station}</strong>
+                <div class="boarding-station">
+                  <strong>${boarding.station}</strong>
+                  ${tubeMarkup(boarding.tube)}
+                </div>
                 <span class="return-time">${boarding.departureTime}</span>
                 <span class="pill ${statusClass(boarding.statusType)}">${boarding.platform ? boarding.statusLabel + " | " + boarding.platform : boarding.statusLabel}</span>
               </div>
