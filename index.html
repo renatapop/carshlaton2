@@ -306,6 +306,10 @@
       background: rgba(16, 23, 32, 0.66);
     }
 
+    .notice.is-hidden {
+      display: none;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -937,6 +941,7 @@
       </div>
       <div class="notice-stack">
         <div class="notice muted" id="weatherNotice">Checking London weather</div>
+        <div class="notice muted is-hidden" id="outTubeNotice"></div>
         <div class="notice muted" id="outDisruptionNotice">Checking recent rail issues</div>
       </div>
       <div class="grid" id="outCards"></div>
@@ -948,6 +953,7 @@
         <div class="updated" id="backUpdated">Updated --:--</div>
       </div>
       <div class="notice-stack">
+        <div class="notice muted is-hidden" id="backTubeNotice"></div>
         <div class="notice muted" id="backDisruptionNotice">Checking recent rail issues</div>
       </div>
       <div class="return-grid" id="backCards"></div>
@@ -961,7 +967,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.09.1835";
+    const BUILD_VERSION = "v2026.10.09.1902";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -1093,6 +1099,8 @@
       outCards: document.querySelector("#outCards"),
       backCards: document.querySelector("#backCards"),
       weatherNotice: document.querySelector("#weatherNotice"),
+      outTubeNotice: document.querySelector("#outTubeNotice"),
+      backTubeNotice: document.querySelector("#backTubeNotice"),
       outDisruptionNotice: document.querySelector("#outDisruptionNotice"),
       backDisruptionNotice: document.querySelector("#backDisruptionNotice"),
       refreshButton: document.querySelector("#refreshButton"),
@@ -1840,7 +1848,12 @@
     }
 
     function setNotice(element, note) {
-      if (!element || !note) return;
+      if (!element) return;
+      if (!note) {
+        element.className = "notice muted is-hidden";
+        element.textContent = "";
+        return;
+      }
       element.className = "notice " + (note.type || "muted");
       element.textContent = note.text;
       if (note.url) {
@@ -1875,6 +1888,8 @@
 
     function renderNotices() {
       setNotice(els.weatherNotice, weatherNote);
+      setNotice(els.outTubeNotice, liveBoard?.tubeHealth || null);
+      setNotice(els.backTubeNotice, liveBoard?.tubeHealth || null);
       updateRailAlertNotes();
       setNotice(els.outDisruptionNotice, railAlertNote.out);
       setNotice(els.backDisruptionNotice, railAlertNote.back);
