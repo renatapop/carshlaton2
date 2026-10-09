@@ -11,22 +11,26 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbfbfa'/%3E%3Cpath d='M17 16h30a5 5 0 0 1 5 5v19a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V21a5 5 0 0 1 5-5Z' fill='%23040457'/%3E%3Cpath d='M20 23h24v6H20zM20 34h13v5H20zM38 34h6v5h-6z' fill='%23fbfbfa'/%3E%3Cpath d='M22 48l-5 8M42 48l5 8' stroke='%23040457' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
   <style>
     :root {
-      color-scheme: light;
-      --bg: #fbfbfa;
-      --panel: #ffffff;
-      --panel-soft: #f2f6f8;
-      --line: rgba(38, 62, 82, 0.1);
-      --text: #18212b;
-      --muted: #70808d;
-      --dim: #9ba6ad;
+      color-scheme: dark;
+      --bg: #05070b;
+      --panel: #101720;
+      --panel-soft: #17212c;
+      --row: #0c1219;
+      --line: rgba(219, 232, 244, 0.12);
+      --line-strong: rgba(219, 232, 244, 0.22);
+      --text: #f7fbff;
+      --muted: #9fafbd;
+      --dim: #687788;
       --blue: #040457;
       --blue-strong: #040457;
       --blue-soft: #8fb5c8;
+      --board-blue: #61b6ff;
+      --board-amber: #ffd166;
       --green: #3e8266;
-      --red: #b75b55;
-      --ink: #ffffff;
+      --red: #ff6b66;
+      --ink: #f7fbff;
       --radius: 8px;
-      --shadow: 0 18px 46px rgba(35, 54, 68, 0.11);
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
       --display-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
       --body-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     }
@@ -43,7 +47,10 @@
     body {
       margin: 0;
       color: var(--text);
-      background: linear-gradient(180deg, #ffffff 0%, #fbfbfa 44%, #f2f5f6 100%);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(97, 182, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 92% 12%, rgba(255, 209, 102, 0.08), transparent 28%),
+        linear-gradient(180deg, #070a10 0%, #05070b 48%, #020306 100%);
       font-family: var(--body-font);
       letter-spacing: 0;
     }
@@ -82,12 +89,12 @@
       display: grid;
       place-items: center;
       flex: 0 0 auto;
-      border: 1px solid rgba(49, 95, 125, 0.18);
+      border: 1px solid var(--line-strong);
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.74);
-      color: var(--blue);
+      background: rgba(16, 23, 32, 0.8);
+      color: var(--board-blue);
       overflow: hidden;
-      box-shadow: 0 10px 24px rgba(35, 54, 68, 0.08);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
     }
 
     .rail-mark img {
@@ -124,6 +131,8 @@
       font-size: clamp(2.3rem, 7vw, 5.6rem);
       line-height: 0.88;
       font-weight: 620;
+      color: var(--board-amber);
+      text-shadow: 0 0 18px rgba(255, 209, 102, 0.14);
     }
 
     .date {
@@ -138,11 +147,11 @@
       margin-top: 12px;
       min-height: 34px;
       padding: 0 14px;
-      border: 1px solid rgba(4, 4, 87, 0.16);
+      border: 1px solid rgba(97, 182, 255, 0.28);
       border-radius: 999px;
-      color: var(--blue);
-      background: rgba(255, 255, 255, 0.86);
-      box-shadow: 0 8px 18px rgba(35, 54, 68, 0.08);
+      color: var(--text);
+      background: rgba(97, 182, 255, 0.12);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
       cursor: pointer;
       font-size: 0.82rem;
       font-weight: 700;
@@ -150,8 +159,8 @@
     }
 
     .refresh-button:hover {
-      border-color: rgba(4, 4, 87, 0.32);
-      background: #ffffff;
+      border-color: rgba(97, 182, 255, 0.5);
+      background: rgba(97, 182, 255, 0.18);
       transform: translateY(-1px);
     }
 
@@ -168,7 +177,7 @@
       padding: 6px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(16, 23, 32, 0.78);
       box-shadow: var(--shadow);
     }
 
@@ -187,12 +196,12 @@
 
     .switcher button:hover {
       color: var(--text);
-      background: rgba(49, 95, 125, 0.07);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .switcher button[aria-selected="true"] {
-      color: var(--ink);
-      background: var(--blue);
+      color: #031018;
+      background: var(--board-amber);
     }
 
     .view {
@@ -240,15 +249,15 @@
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(16, 23, 32, 0.74);
       color: var(--text);
-      box-shadow: 0 10px 24px rgba(35, 54, 68, 0.06);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
       font-size: clamp(0.9rem, 1.7vw, 1rem);
       font-weight: 620;
     }
 
     .notice strong {
-      color: var(--blue);
+      color: var(--board-amber);
       font-weight: 700;
     }
 
@@ -256,7 +265,7 @@
       display: block;
       width: fit-content;
       margin-top: 6px;
-      color: #0645ad;
+      color: var(--board-blue);
       font-weight: 500;
       text-decoration: underline;
       text-decoration-thickness: 1px;
@@ -264,25 +273,26 @@
     }
 
     .notice.warn {
-      border-color: rgba(183, 91, 85, 0.22);
-      background: rgba(183, 91, 85, 0.07);
+      border-color: rgba(255, 209, 102, 0.32);
+      background: rgba(255, 209, 102, 0.08);
+      color: #ffe0a1;
     }
 
     .notice.severe {
-      border-color: rgba(183, 91, 85, 0.34);
-      background: rgba(183, 91, 85, 0.12);
+      border-color: rgba(255, 107, 102, 0.44);
+      background: rgba(255, 107, 102, 0.12);
       color: var(--red);
     }
 
     .notice.good {
-      border-color: rgba(52, 125, 91, 0.18);
-      background: rgba(52, 125, 91, 0.08);
-      color: var(--green);
+      border-color: rgba(73, 211, 148, 0.2);
+      background: rgba(73, 211, 148, 0.08);
+      color: #73d7ac;
     }
 
     .notice.muted {
       color: var(--muted);
-      background: rgba(247, 250, 251, 0.86);
+      background: rgba(16, 23, 32, 0.66);
     }
 
     .grid {
@@ -300,7 +310,7 @@
       padding: clamp(24px, 5vw, 44px);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.86);
+      background: rgba(16, 23, 32, 0.82);
       box-shadow: var(--shadow);
       text-align: center;
     }
@@ -308,14 +318,14 @@
     .loading-cog {
       width: 52px;
       height: 52px;
-      border: 5px solid rgba(4, 4, 87, 0.14);
-      border-top-color: var(--blue);
+      border: 5px solid rgba(97, 182, 255, 0.14);
+      border-top-color: var(--board-blue);
       border-radius: 50%;
       animation: spin 900ms linear infinite;
     }
 
     .state-title {
-      color: var(--blue);
+      color: var(--board-amber);
       font-size: clamp(1.15rem, 2.5vw, 1.55rem);
       font-weight: 650;
     }
@@ -341,7 +351,9 @@
       min-width: 0;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.86);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 28%),
+        rgba(16, 23, 32, 0.9);
       box-shadow: var(--shadow);
     }
 
@@ -350,7 +362,7 @@
       content: "";
       position: absolute;
       inset: 0 0 auto;
-      height: 3px;
+      height: 4px;
       background: var(--accent, var(--blue));
     }
 
@@ -382,7 +394,7 @@
       min-height: 30px;
       padding: 5px 10px;
       border-radius: 999px;
-      background: var(--panel-soft);
+      background: rgba(255, 255, 255, 0.08);
       color: var(--muted);
       font-size: 0.78rem;
       font-weight: 650;
@@ -391,18 +403,18 @@
     }
 
     .pill.good {
-      color: var(--green);
-      background: rgba(52, 125, 91, 0.1);
+      color: #73d7ac;
+      background: rgba(73, 211, 148, 0.12);
     }
 
     .pill.delay {
       color: var(--red);
-      background: rgba(183, 91, 85, 0.1);
+      background: rgba(255, 107, 102, 0.14);
     }
 
     .pill.cancelled {
       color: var(--red);
-      background: rgba(187, 77, 70, 0.1);
+      background: rgba(255, 107, 102, 0.14);
     }
 
     .pill.loading {
@@ -428,7 +440,8 @@
       gap: 12px;
       padding: 13px 12px;
       border-radius: 6px;
-      background: #f7fafb;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.035);
     }
 
     .service-option + .service-option,
@@ -461,20 +474,22 @@
       font-size: clamp(2.45rem, 7vw, 5.2rem);
       line-height: 0.9;
       font-weight: 620;
+      color: var(--board-amber);
+      text-shadow: 0 0 18px rgba(255, 209, 102, 0.1);
     }
 
     .leave-box {
       width: 100%;
       min-width: 0;
       padding: 13px 14px;
-      border: 1px solid rgba(49, 95, 125, 0.16);
+      border: 1px solid rgba(97, 182, 255, 0.18);
       border-radius: var(--radius);
-      background: var(--panel-soft);
+      background: rgba(97, 182, 255, 0.07);
       text-align: left;
     }
 
     .leave-value {
-      color: var(--blue);
+      color: var(--text);
       font-size: clamp(1.18rem, 3vw, 2rem);
       line-height: 1.08;
       font-weight: 650;
@@ -508,7 +523,7 @@
     .service-option .arrival-row {
       min-height: 36px;
       padding: 7px 10px;
-      background: rgba(255, 255, 255, 0.74);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .arrival-row,
@@ -520,7 +535,7 @@
       min-height: 42px;
       padding: 9px 12px;
       border-radius: 6px;
-      background: #f7fafb;
+      background: var(--row);
     }
 
     .arrival-destination > span,
@@ -530,7 +545,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: #2a3440;
+      color: var(--text);
       font-size: clamp(0.95rem, 1.8vw, 1.08rem);
       font-weight: 600;
     }
@@ -543,7 +558,17 @@
     }
 
     .tube-note {
-      color: var(--red);
+      --tube: var(--board-blue);
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      min-height: 22px;
+      padding: 3px 8px 3px 7px;
+      border-left: 4px solid var(--tube);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.07);
+      color: #ffd1cf;
       font-size: clamp(0.72rem, 1.45vw, 0.82rem);
       font-weight: 700;
       line-height: 1.18;
@@ -555,7 +580,35 @@
     }
 
     .tube-note.good {
-      color: var(--green);
+      color: #d9fff0;
+    }
+
+    .tube-note.line-victoria {
+      --tube: #0098d4;
+    }
+
+    .tube-note.line-bakerloo {
+      --tube: #b36305;
+    }
+
+    .tube-note.line-northern {
+      --tube: #ffffff;
+    }
+
+    .tube-note.line-piccadilly {
+      --tube: #003688;
+    }
+
+    .tube-note.line-central {
+      --tube: #e32017;
+    }
+
+    .tube-note.line-liverpool {
+      --tube: #6950a1;
+      border-left-color: transparent;
+      background:
+        linear-gradient(90deg, #6950a1 0 4px, #ffd300 4px 8px, #f3a9bb 8px 12px, #9b0056 12px 16px, rgba(255, 255, 255, 0.07) 16px);
+      padding-left: 22px;
     }
 
     .arrival-time,
@@ -615,7 +668,7 @@
       min-height: 40px;
       padding: 8px 10px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.74);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .journey-boarding-row strong {
@@ -634,7 +687,7 @@
       min-height: 58px;
       padding: 11px 12px;
       border-radius: 6px;
-      background: #f7fafb;
+      background: var(--row);
     }
 
     .return-station {
@@ -666,15 +719,15 @@
       justify-content: space-between;
       gap: 18px;
       padding: 8px 10px;
-      border: 1px solid rgba(4, 4, 87, 0.12);
+      border: 1px solid rgba(97, 182, 255, 0.2);
       border-radius: 6px;
-      background: rgba(4, 4, 87, 0.045);
+      background: rgba(97, 182, 255, 0.08);
       text-align: left;
     }
 
     .return-mini.arrival-cell .mini-label,
     .return-mini.arrival-cell strong {
-      color: var(--blue);
+      color: var(--text);
     }
 
     .return-mini.arrival-cell .mini-label {
@@ -881,7 +934,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.09.1512";
+    const BUILD_VERSION = "v2026.10.09.1820";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -907,7 +960,7 @@
     const outRoutes = [
       {
         name: "Victoria",
-        accent: "#040457",
+        accent: "#0098d4",
         departures: [7, 37],
         journey: 36,
         platform: "P1",
@@ -919,7 +972,7 @@
       },
       {
         name: "St Albans line",
-        accent: "#8fb5c8",
+        accent: "#e64097",
         departures: [15, 45],
         journey: 69,
         platform: "P2",
@@ -937,7 +990,7 @@
     const backStations = [
       {
         station: "Victoria",
-        accent: "#040457",
+        accent: "#0098d4",
         departures: [4, 34],
         journey: 36,
         platform: "P14",
@@ -945,7 +998,7 @@
       },
       {
         station: "Balham",
-        accent: "#040457",
+        accent: "#000000",
         departures: [18, 48],
         journey: 18,
         platform: "P4",
@@ -953,7 +1006,7 @@
       },
       {
         station: "Elephant & Castle",
-        accent: "#8fb5c8",
+        accent: "#b36305",
         departures: [11, 41],
         journey: 28,
         platform: "P4",
@@ -961,7 +1014,7 @@
       },
       {
         station: "City Thameslink",
-        accent: "#8fb5c8",
+        accent: "#e64097",
         departures: [6, 36],
         journey: 35,
         platform: "P2",
@@ -969,7 +1022,7 @@
       },
       {
         station: "Farringdon",
-        accent: "#8fb5c8",
+        accent: "#6950a1",
         departures: [2, 32],
         journey: 39,
         platform: "P3",
@@ -977,7 +1030,7 @@
       },
       {
         station: "St Pancras",
-        accent: "#8fb5c8",
+        accent: "#003688",
         departures: [57, 27],
         journey: 45,
         platform: "A",
@@ -988,12 +1041,12 @@
     const backRouteGroups = [
       {
         name: "Victoria",
-        accent: "#040457",
+        accent: "#0098d4",
         stations: ["Victoria", "Balham"]
       },
       {
         name: "St Albans line",
-        accent: "#8fb5c8",
+        accent: "#e64097",
         stations: ["St Pancras", "Farringdon", "City Thameslink", "Elephant & Castle"]
       }
     ];
@@ -1046,12 +1099,12 @@
     };
 
     const directBackOrigins = [
-      { station: "Victoria", crs: CRS.victoria, accent: "#040457" },
-      { station: "Balham", crs: CRS.balham, accent: "#040457" },
-      { station: "Elephant & Castle", crs: CRS.elephant, accent: "#8fb5c8" },
-      { station: "City Thameslink", crs: CRS.cityThameslink, accent: "#8fb5c8" },
-      { station: "Farringdon", crs: CRS.farringdon, accent: "#8fb5c8" },
-      { station: "St Pancras", crs: CRS.stPancrasThameslink, accent: "#8fb5c8" }
+      { station: "Victoria", crs: CRS.victoria, accent: "#0098d4" },
+      { station: "Balham", crs: CRS.balham, accent: "#000000" },
+      { station: "Elephant & Castle", crs: CRS.elephant, accent: "#b36305" },
+      { station: "City Thameslink", crs: CRS.cityThameslink, accent: "#e64097" },
+      { station: "Farringdon", crs: CRS.farringdon, accent: "#6950a1" },
+      { station: "St Pancras", crs: CRS.stPancrasThameslink, accent: "#003688" }
     ];
 
     const returnMinimumLeadMinutes = {
@@ -1062,12 +1115,12 @@
     const directBackGroups = [
       {
         name: "Victoria",
-        accent: "#040457",
+        accent: "#0098d4",
         origins: [CRS.victoria, CRS.balham]
       },
       {
         name: "St Albans line",
-        accent: "#8fb5c8",
+        accent: "#e64097",
         origins: [CRS.stPancrasThameslink, CRS.farringdon, CRS.cityThameslink, CRS.elephant]
       }
     ];
@@ -1723,8 +1776,28 @@
       const classes = ["tube-note"];
       if (tube.statusType === "muted") classes.push("muted");
       if (tube.statusType === "good") classes.push("good");
+      const lineClass = tubeLineClass(tube.name);
+      if (lineClass) classes.push(lineClass);
       const reason = tube.reason ? " - " + tube.reason : "";
       return `<span class="${classes.join(" ")}">${tube.name}: ${tube.statusLabel}${reason}</span>`;
+    }
+
+    function tubeLineClass(name = "") {
+      const value = String(name).toLowerCase();
+      if (value.includes("victoria")) return "line-victoria";
+      if (value.includes("bakerloo")) return "line-bakerloo";
+      if (value.includes("northern")) return "line-northern";
+      if (value.includes("piccadilly")) return "line-piccadilly";
+      if (value.includes("central")) return "line-central";
+      if (value.includes("liverpool street")) return "line-liverpool";
+      return "";
+    }
+
+    function routeAccent(route) {
+      const name = String(route?.name || "").toLowerCase();
+      if (name.includes("victoria")) return "#0098d4";
+      if (name.includes("st albans")) return "#e64097";
+      return route?.accent || "var(--board-blue)";
     }
 
     function boardStateMarkup(title, copy, isLoading = false) {
@@ -1819,7 +1892,7 @@
           }).join("");
 
           return `
-            <article class="route-card" style="--accent:${route.accent || "var(--blue)"}">
+            <article class="route-card" style="--accent:${routeAccent(route)}">
               <div class="card-main">
                 <div class="route-title">
                   <h3>${route.name}</h3>
@@ -1892,7 +1965,7 @@
           `).join("");
 
           return `
-            <article class="return-card" style="--accent:${route.accent || "var(--blue-soft)"}">
+            <article class="return-card" style="--accent:${routeAccent(route)}">
               <div class="card-main">
                 <div class="return-title">
                   <h3>${route.name}</h3>
