@@ -9,6 +9,9 @@
   <title>Carshalton Departures</title>
   <meta name="description" content="A tablet-friendly Carshalton departures board draft.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbfbfa'/%3E%3Cpath d='M17 16h30a5 5 0 0 1 5 5v19a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V21a5 5 0 0 1 5-5Z' fill='%23040457'/%3E%3Cpath d='M20 23h24v6H20zM20 34h13v5H20zM38 34h6v5h-6z' fill='%23fbfbfa'/%3E%3Cpath d='M22 48l-5 8M42 48l5 8' stroke='%23040457' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
@@ -31,8 +34,8 @@
       --ink: #f7fbff;
       --radius: 8px;
       --shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
-      --display-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-      --body-font: Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+      --display-font: "Barlow Condensed", "Arial Narrow", "Helvetica Neue Condensed", ui-sans-serif, system-ui, sans-serif;
+      --body-font: Inter, Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     }
 
     * {
@@ -107,16 +110,18 @@
     h1 {
       margin: 0;
       font-family: var(--display-font);
-      font-size: clamp(1.65rem, 4vw, 3.4rem);
-      line-height: 1;
-      font-weight: 560;
+      font-size: clamp(2.15rem, 5.4vw, 4.5rem);
+      line-height: 0.92;
+      font-weight: 600;
       text-transform: none;
     }
 
     .code {
       margin-top: 8px;
       color: var(--muted);
-      font-size: clamp(0.85rem, 1.7vw, 1rem);
+      font-family: var(--display-font);
+      font-size: clamp(1.05rem, 2.2vw, 1.38rem);
+      line-height: 1;
       font-weight: 600;
       text-transform: none;
     }
@@ -127,10 +132,11 @@
     }
 
     .time {
+      font-family: var(--display-font);
       font-variant-numeric: tabular-nums;
-      font-size: clamp(2.3rem, 7vw, 5.6rem);
+      font-size: clamp(3rem, 9vw, 7rem);
       line-height: 0.88;
-      font-weight: 620;
+      font-weight: 600;
       color: var(--board-amber);
       text-shadow: 0 0 18px rgba(255, 209, 102, 0.14);
     }
@@ -138,7 +144,9 @@
     .date {
       margin-top: 8px;
       color: var(--muted);
-      font-size: clamp(0.82rem, 1.5vw, 1rem);
+      font-family: var(--display-font);
+      font-size: clamp(1rem, 1.9vw, 1.22rem);
+      line-height: 1;
       font-weight: 600;
       text-transform: none;
     }
@@ -188,8 +196,9 @@
       color: var(--muted);
       background: transparent;
       cursor: pointer;
-      font-size: clamp(0.95rem, 2vw, 1.08rem);
-      font-weight: 650;
+      font-family: var(--display-font);
+      font-size: clamp(1.22rem, 2.7vw, 1.55rem);
+      font-weight: 600;
       text-transform: none;
       transition: background 180ms ease, color 180ms ease, transform 180ms ease;
     }
@@ -224,14 +233,16 @@
     .section-head h2 {
       margin: 0;
       font-family: var(--display-font);
-      font-size: clamp(1rem, 2.2vw, 1.34rem);
-      font-weight: 520;
+      font-size: clamp(1.48rem, 3.2vw, 2.05rem);
+      line-height: 0.98;
+      font-weight: 600;
       text-transform: none;
     }
 
     .updated {
       color: var(--muted);
-      font-size: clamp(0.78rem, 1.6vw, 0.92rem);
+      font-family: var(--display-font);
+      font-size: clamp(1rem, 1.9vw, 1.2rem);
       font-weight: 600;
       text-transform: none;
       white-space: nowrap;
@@ -382,13 +393,14 @@
     .route-title h3 {
       margin: 0;
       font-family: var(--display-font);
-      font-size: clamp(1.28rem, 3.4vw, 2.45rem);
-      line-height: 1.02;
-      font-weight: 560;
+      font-size: clamp(2rem, 5.3vw, 3.65rem);
+      line-height: 0.9;
+      font-weight: 600;
       text-transform: none;
     }
 
     .pill {
+      font-family: var(--display-font);
       display: inline-flex;
       align-items: center;
       min-height: 30px;
@@ -396,8 +408,9 @@
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
       color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 650;
+      font-size: 1rem;
+      line-height: 1;
+      font-weight: 600;
       text-transform: none;
       white-space: nowrap;
     }
@@ -464,16 +477,19 @@
 
     .label {
       color: var(--muted);
-      font-size: clamp(0.82rem, 1.5vw, 0.95rem);
-      font-weight: 620;
+      font-family: var(--display-font);
+      font-size: clamp(1rem, 2vw, 1.22rem);
+      line-height: 1;
+      font-weight: 600;
       text-transform: none;
     }
 
     .big-time {
+      font-family: var(--display-font);
       font-variant-numeric: tabular-nums;
-      font-size: clamp(2.45rem, 7vw, 5.2rem);
-      line-height: 0.9;
-      font-weight: 620;
+      font-size: clamp(3.2rem, 8.6vw, 6.4rem);
+      line-height: 0.82;
+      font-weight: 600;
       color: var(--board-amber);
       text-shadow: 0 0 18px rgba(255, 209, 102, 0.1);
     }
@@ -490,9 +506,10 @@
 
     .leave-value {
       color: var(--text);
-      font-size: clamp(1.18rem, 3vw, 2rem);
-      line-height: 1.08;
-      font-weight: 650;
+      font-family: var(--display-font);
+      font-size: clamp(1.55rem, 3.7vw, 2.55rem);
+      line-height: 0.98;
+      font-weight: 600;
     }
 
     .leave-note {
@@ -513,11 +530,11 @@
     }
 
     .service-option .big-time {
-      font-size: clamp(2rem, 5vw, 3.65rem);
+      font-size: clamp(2.8rem, 7vw, 4.8rem);
     }
 
     .service-option .leave-value {
-      font-size: clamp(1rem, 2.35vw, 1.48rem);
+      font-size: clamp(1.35rem, 3.2vw, 2.05rem);
     }
 
     .service-option .arrival-row {
@@ -546,7 +563,9 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       color: var(--text);
-      font-size: clamp(0.95rem, 1.8vw, 1.08rem);
+      font-family: var(--display-font);
+      font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+      line-height: 0.98;
       font-weight: 600;
     }
 
@@ -613,10 +632,12 @@
 
     .arrival-time,
     .return-time {
+      font-family: var(--display-font);
       font-variant-numeric: tabular-nums;
       color: var(--text);
-      font-size: clamp(1rem, 2vw, 1.18rem);
-      font-weight: 650;
+      font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+      line-height: 0.95;
+      font-weight: 600;
       white-space: nowrap;
     }
 
@@ -644,9 +665,9 @@
     .return-title h3 {
       margin: 0;
       font-family: var(--display-font);
-      font-size: clamp(1.28rem, 3.4vw, 2.45rem);
-      line-height: 1.02;
-      font-weight: 560;
+      font-size: clamp(2rem, 5.3vw, 3.65rem);
+      line-height: 0.9;
+      font-weight: 600;
       text-transform: none;
     }
 
@@ -676,7 +697,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: clamp(0.95rem, 1.8vw, 1.08rem);
+      font-family: var(--display-font);
+      font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+      line-height: 0.98;
     }
 
     .return-station-row {
@@ -698,8 +721,10 @@
     .return-mini strong {
       display: block;
       color: var(--text);
-      font-size: clamp(1rem, 2vw, 1.18rem);
-      font-weight: 650;
+      font-family: var(--display-font);
+      font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+      line-height: 0.95;
+      font-weight: 600;
       white-space: nowrap;
     }
 
@@ -739,8 +764,10 @@
       display: block;
       margin-bottom: 2px;
       color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 620;
+      font-family: var(--display-font);
+      font-size: 0.98rem;
+      line-height: 1;
+      font-weight: 600;
     }
 
     .return-departure {
@@ -750,7 +777,7 @@
     }
 
     .return-departure .big-time {
-      font-size: clamp(2rem, 5.4vw, 3.8rem);
+      font-size: clamp(2.8rem, 7vw, 5rem);
     }
 
     .divider {
@@ -934,7 +961,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.09.1820";
+    const BUILD_VERSION = "v2026.10.09.1835";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
