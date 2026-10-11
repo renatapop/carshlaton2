@@ -15,28 +15,27 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #000000;
-      --panel: #05070d;
-      --panel-soft: #09111c;
-      --row: #03060b;
-      --line: rgba(0, 229, 255, 0.22);
-      --line-strong: rgba(255, 42, 213, 0.38);
-      --text: #f7fbff;
-      --muted: #94a8ba;
-      --dim: #596879;
+      --bg: #08070d;
+      --panel: #0d0c14;
+      --panel-soft: #14131d;
+      --row: #111019;
+      --line: rgba(232, 228, 255, 0.1);
+      --line-strong: rgba(232, 228, 255, 0.18);
+      --text: #f4f1fb;
+      --muted: #9b95aa;
+      --dim: #6f687c;
       --blue: #040457;
       --blue-strong: #040457;
       --blue-soft: #8fb5c8;
-      --neon-cyan: #00e5ff;
-      --neon-pink: #ff2ad5;
-      --neon-violet: #8b5cff;
-      --board-blue: #00e5ff;
-      --board-amber: #ffe66d;
+      --accent-purple: #7c4dff;
+      --accent-blue: #77a7c8;
+      --board-blue: #77a7c8;
+      --board-amber: #f2d68a;
       --green: #3e8266;
-      --red: #ff4f7b;
+      --red: #e86f75;
       --ink: #f7fbff;
       --radius: 8px;
-      --shadow: 0 18px 46px rgba(0, 0, 0, 0.62), 0 0 24px rgba(0, 229, 255, 0.06);
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
       --display-font: "Barlow Condensed", "Arial Narrow", "Helvetica Neue Condensed", ui-sans-serif, system-ui, sans-serif;
       --body-font: Inter, Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     }
@@ -53,7 +52,7 @@
     body {
       margin: 0;
       color: var(--text);
-      background: #000000;
+      background: var(--bg);
       font-family: var(--body-font);
       letter-spacing: 0;
     }
@@ -94,10 +93,10 @@
       flex: 0 0 auto;
       border: 1px solid var(--line-strong);
       border-radius: 14px;
-      background: #03060b;
+      background: var(--panel);
       color: var(--board-blue);
       overflow: hidden;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.62), 0 0 22px rgba(255, 42, 213, 0.18);
+      box-shadow: var(--shadow);
     }
 
     .rail-mark img {
@@ -115,7 +114,6 @@
       font-weight: 600;
       text-transform: none;
       color: var(--text);
-      text-shadow: 0 0 18px rgba(0, 229, 255, 0.22);
     }
 
     .code {
@@ -126,18 +124,15 @@
       line-height: 1;
       font-weight: 600;
       text-transform: none;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
     }
 
     .clock {
       min-width: clamp(180px, 24vw, 260px);
       padding: 12px 14px 14px;
-      border: 1px solid rgba(255, 42, 213, 0.36);
+      border: 1px solid var(--line-strong);
       border-radius: var(--radius);
-      background:
-        linear-gradient(180deg, rgba(0, 229, 255, 0.08), transparent 48%),
-        #03060b;
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.52), 0 0 22px rgba(255, 42, 213, 0.14);
+      background: var(--panel);
+      box-shadow: var(--shadow);
       text-align: right;
     }
 
@@ -148,29 +143,27 @@
       line-height: 0.78;
       font-weight: 600;
       color: var(--board-amber);
-      text-shadow: 0 0 10px rgba(255, 230, 109, 0.48), 0 0 30px rgba(0, 229, 255, 0.16);
     }
 
     .date {
       margin-top: 10px;
-      color: var(--neon-cyan);
+      color: var(--muted);
       font-family: var(--display-font);
       font-size: clamp(1rem, 1.9vw, 1.22rem);
       line-height: 1;
       font-weight: 600;
       text-transform: none;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.24);
     }
 
     .refresh-button {
       margin-top: 12px;
       min-height: 34px;
       padding: 0 14px;
-      border: 1px solid rgba(0, 229, 255, 0.36);
+      border: 1px solid var(--line-strong);
       border-radius: 999px;
       color: var(--text);
-      background: rgba(0, 229, 255, 0.08);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28), 0 0 16px rgba(0, 229, 255, 0.12);
+      background: rgba(124, 77, 255, 0.16);
+      box-shadow: none;
       cursor: pointer;
       font-family: var(--display-font);
       font-size: 1.02rem;
@@ -180,8 +173,8 @@
     }
 
     .refresh-button:hover {
-      border-color: rgba(255, 42, 213, 0.54);
-      background: rgba(255, 42, 213, 0.12);
+      border-color: rgba(124, 77, 255, 0.46);
+      background: rgba(124, 77, 255, 0.24);
       transform: translateY(-1px);
     }
 
@@ -198,7 +191,7 @@
       padding: 6px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #03060b;
+      background: var(--panel);
       box-shadow: var(--shadow);
     }
 
@@ -218,13 +211,13 @@
 
     .switcher button:hover {
       color: var(--text);
-      background: rgba(0, 229, 255, 0.08);
+      background: rgba(255, 255, 255, 0.045);
     }
 
     .switcher button[aria-selected="true"] {
-      color: #000000;
-      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
-      box-shadow: 0 0 24px rgba(0, 229, 255, 0.24), 0 0 18px rgba(255, 42, 213, 0.18);
+      color: var(--text);
+      background: rgba(124, 77, 255, 0.34);
+      box-shadow: inset 0 0 0 1px rgba(232, 228, 255, 0.08);
     }
 
     .view {
@@ -274,9 +267,9 @@
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #03060b;
+      background: var(--panel);
       color: var(--text);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.44), 0 0 18px rgba(0, 229, 255, 0.05);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
       font-size: clamp(0.9rem, 1.7vw, 1rem);
       font-weight: 620;
     }
@@ -298,26 +291,26 @@
     }
 
     .notice.warn {
-      border-color: rgba(255, 230, 109, 0.38);
-      background: rgba(255, 230, 109, 0.08);
+      border-color: rgba(242, 214, 138, 0.28);
+      background: rgba(242, 214, 138, 0.08);
       color: #ffe0a1;
     }
 
     .notice.severe {
-      border-color: rgba(255, 79, 123, 0.48);
-      background: rgba(255, 79, 123, 0.12);
+      border-color: rgba(232, 111, 117, 0.42);
+      background: rgba(232, 111, 117, 0.1);
       color: var(--red);
     }
 
     .notice.good {
-      border-color: rgba(47, 255, 166, 0.24);
-      background: rgba(47, 255, 166, 0.08);
-      color: #7dffc7;
+      border-color: rgba(116, 199, 160, 0.24);
+      background: rgba(116, 199, 160, 0.08);
+      color: #8eddb7;
     }
 
     .notice.muted {
       color: var(--muted);
-      background: #03060b;
+      background: var(--panel);
     }
 
     .notice.is-hidden {
@@ -339,7 +332,7 @@
       padding: clamp(24px, 5vw, 44px);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #03060b;
+      background: var(--panel);
       box-shadow: var(--shadow);
       text-align: center;
     }
@@ -347,7 +340,7 @@
     .loading-cog {
       width: 52px;
       height: 52px;
-      border: 5px solid rgba(0, 229, 255, 0.14);
+      border: 5px solid rgba(119, 167, 200, 0.14);
       border-top-color: var(--board-blue);
       border-radius: 50%;
       animation: spin 900ms linear infinite;
@@ -380,10 +373,7 @@
       min-width: 0;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background:
-        linear-gradient(180deg, rgba(0, 229, 255, 0.07), transparent 34%),
-        linear-gradient(90deg, rgba(255, 42, 213, 0.08), transparent 26%),
-        #03060b;
+      background: var(--panel);
       box-shadow: var(--shadow);
     }
 
@@ -393,8 +383,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 4px;
-      background: linear-gradient(90deg, var(--accent, var(--neon-cyan)), var(--neon-pink));
-      box-shadow: 0 0 16px var(--accent, var(--neon-cyan));
+      background: var(--accent, var(--accent-purple));
     }
 
     .card-main {
@@ -417,7 +406,6 @@
       line-height: 0.9;
       font-weight: 600;
       text-transform: none;
-      text-shadow: 0 0 16px rgba(0, 229, 255, 0.18);
     }
 
     .pill {
@@ -438,21 +426,21 @@
     }
 
     .pill.good {
-      color: #7dffc7;
-      background: rgba(47, 255, 166, 0.12);
-      border-color: rgba(47, 255, 166, 0.2);
+      color: #8eddb7;
+      background: rgba(116, 199, 160, 0.12);
+      border-color: rgba(116, 199, 160, 0.2);
     }
 
     .pill.delay {
       color: var(--red);
-      background: rgba(255, 79, 123, 0.14);
-      border-color: rgba(255, 79, 123, 0.22);
+      background: rgba(232, 111, 117, 0.12);
+      border-color: rgba(232, 111, 117, 0.22);
     }
 
     .pill.cancelled {
       color: var(--red);
-      background: rgba(255, 79, 123, 0.14);
-      border-color: rgba(255, 79, 123, 0.22);
+      background: rgba(232, 111, 117, 0.12);
+      border-color: rgba(232, 111, 117, 0.22);
     }
 
     .pill.loading {
@@ -479,7 +467,7 @@
       padding: 13px 12px;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.38);
-      border: 1px solid rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(232, 228, 255, 0.08);
     }
 
     .service-option + .service-option,
@@ -516,17 +504,15 @@
       line-height: 0.82;
       font-weight: 600;
       color: var(--board-amber);
-      text-shadow: 0 0 10px rgba(255, 230, 109, 0.28), 0 0 28px rgba(255, 42, 213, 0.1);
     }
 
     .leave-box {
       width: 100%;
       min-width: 0;
       padding: 13px 14px;
-      border: 1px solid rgba(0, 229, 255, 0.24);
+      border: 1px solid rgba(232, 228, 255, 0.1);
       border-radius: var(--radius);
-      background: rgba(0, 229, 255, 0.06);
-      box-shadow: inset 0 0 18px rgba(0, 229, 255, 0.035);
+      background: var(--panel-soft);
       text-align: left;
     }
 
@@ -536,7 +522,6 @@
       font-size: clamp(1.55rem, 3.7vw, 2.55rem);
       line-height: 0.98;
       font-weight: 600;
-      text-shadow: 0 0 14px rgba(0, 229, 255, 0.18);
     }
 
     .leave-note {
@@ -595,7 +580,6 @@
       font-size: clamp(1.2rem, 2.4vw, 1.55rem);
       line-height: 0.98;
       font-weight: 600;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.12);
     }
 
     .arrival-destination,
@@ -617,11 +601,12 @@
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.06);
       color: #ffd1cf;
-      font-size: clamp(0.72rem, 1.45vw, 0.82rem);
+      font-family: var(--body-font);
+      font-size: clamp(0.66rem, 1.2vw, 0.74rem);
       font-weight: 700;
-      line-height: 1.18;
+      line-height: 1.22;
       white-space: normal;
-      box-shadow: 0 0 12px color-mix(in srgb, var(--tube), transparent 72%);
+      overflow-wrap: anywhere;
     }
 
     .tube-note.muted {
@@ -669,7 +654,6 @@
       line-height: 0.95;
       font-weight: 600;
       white-space: nowrap;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.12);
     }
 
     .return-grid {
@@ -721,7 +705,7 @@
       padding: 8px 10px;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(232, 228, 255, 0.08);
     }
 
     .journey-boarding-row strong {
@@ -777,9 +761,9 @@
       justify-content: space-between;
       gap: 18px;
       padding: 8px 10px;
-      border: 1px solid rgba(0, 229, 255, 0.24);
+      border: 1px solid rgba(232, 228, 255, 0.1);
       border-radius: 6px;
-      background: rgba(0, 229, 255, 0.06);
+      background: var(--panel-soft);
       text-align: left;
     }
 
@@ -885,6 +869,16 @@
         text-align: left;
       }
 
+      .arrival-row {
+        align-items: start;
+      }
+
+      .tube-note {
+        width: fit-content;
+        max-width: 100%;
+        font-size: 0.68rem;
+      }
+
       .footer {
         flex-direction: column;
         gap: 6px;
@@ -917,6 +911,27 @@
       .journey-topline,
       .journey-boarding-row {
         grid-template-columns: 1fr;
+      }
+
+      .arrival-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .arrival-time {
+        justify-self: start;
+        font-size: 1.18rem;
+      }
+
+      .arrival-destination > span,
+      .boarding-station strong {
+        white-space: normal;
+      }
+
+      .pill {
+        width: fit-content;
+        max-width: 100%;
+        white-space: normal;
       }
 
       .journey-boarding-row {
@@ -1011,7 +1026,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.09.1926";
+    const BUILD_VERSION = "v2026.10.11.1015";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
