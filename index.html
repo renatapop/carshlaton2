@@ -15,27 +15,27 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #08070d;
-      --panel: #0d0c14;
-      --panel-soft: #14131d;
-      --row: #111019;
-      --line: rgba(232, 228, 255, 0.1);
-      --line-strong: rgba(232, 228, 255, 0.18);
-      --text: #f4f1fb;
-      --muted: #9b95aa;
-      --dim: #6f687c;
+      --bg: #090012;
+      --panel: rgba(18, 12, 30, 0.82);
+      --panel-soft: rgba(32, 22, 48, 0.82);
+      --row: rgba(16, 10, 28, 0.78);
+      --line: rgba(207, 184, 255, 0.12);
+      --line-strong: rgba(207, 184, 255, 0.22);
+      --text: #fbf8ff;
+      --muted: #aaa0bd;
+      --dim: #756b87;
       --blue: #040457;
       --blue-strong: #040457;
       --blue-soft: #8fb5c8;
-      --accent-purple: #7c4dff;
-      --accent-blue: #77a7c8;
-      --board-blue: #77a7c8;
-      --board-amber: #f2d68a;
+      --accent-purple: #a35cff;
+      --accent-blue: #9d8cff;
+      --board-blue: #b8a7ff;
+      --board-amber: #f0d7a1;
       --green: #3e8266;
       --red: #e86f75;
       --ink: #f7fbff;
       --radius: 8px;
-      --shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.34), 0 0 34px rgba(116, 56, 180, 0.08);
       --display-font: "Barlow Condensed", "Arial Narrow", "Helvetica Neue Condensed", ui-sans-serif, system-ui, sans-serif;
       --body-font: Inter, Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     }
@@ -52,7 +52,9 @@
     body {
       margin: 0;
       color: var(--text);
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(166, 86, 255, 0.28) 0%, rgba(112, 55, 174, 0.13) 22%, transparent 52%),
+        linear-gradient(180deg, #090012 0%, #0c0416 36%, #07040d 100%);
       font-family: var(--body-font);
       letter-spacing: 0;
     }
@@ -62,6 +64,7 @@
     }
 
     .app {
+      position: relative;
       width: min(1180px, 100%);
       min-height: 100vh;
       margin: 0 auto;
@@ -69,6 +72,19 @@
       display: grid;
       grid-template-rows: auto auto 1fr auto;
       gap: clamp(10px, 1.6vw, 16px);
+    }
+
+    .app::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(207, 184, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(207, 184, 255, 0.035) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(180deg, transparent 0%, black 16%, black 56%, transparent 100%);
+      opacity: 0.35;
     }
 
     .topbar {
@@ -162,7 +178,7 @@
       border: 1px solid var(--line-strong);
       border-radius: 999px;
       color: var(--text);
-      background: rgba(124, 77, 255, 0.16);
+      background: rgba(163, 92, 255, 0.18);
       box-shadow: none;
       cursor: pointer;
       font-family: var(--display-font);
@@ -173,8 +189,8 @@
     }
 
     .refresh-button:hover {
-      border-color: rgba(124, 77, 255, 0.46);
-      background: rgba(124, 77, 255, 0.24);
+      border-color: rgba(207, 184, 255, 0.42);
+      background: rgba(163, 92, 255, 0.26);
       transform: translateY(-1px);
     }
 
@@ -216,8 +232,8 @@
 
     .switcher button[aria-selected="true"] {
       color: var(--text);
-      background: rgba(124, 77, 255, 0.34);
-      box-shadow: inset 0 0 0 1px rgba(232, 228, 255, 0.08);
+      background: rgba(163, 92, 255, 0.34);
+      box-shadow: inset 0 0 0 1px rgba(232, 228, 255, 0.1);
     }
 
     .view {
@@ -267,9 +283,9 @@
       padding: 8px 10px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--panel);
+      background: rgba(18, 12, 30, 0.72);
       color: var(--text);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
       font-size: clamp(0.9rem, 1.7vw, 1rem);
       font-weight: 620;
     }
@@ -310,7 +326,7 @@
 
     .notice.muted {
       color: var(--muted);
-      background: var(--panel);
+      background: rgba(18, 12, 30, 0.62);
     }
 
     .notice.is-hidden {
@@ -373,7 +389,9 @@
       min-width: 0;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--panel);
+      background:
+        linear-gradient(180deg, rgba(207, 184, 255, 0.035), transparent 44%),
+        var(--panel);
       box-shadow: var(--shadow);
     }
 
@@ -383,7 +401,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 4px;
-      background: var(--accent, var(--accent-purple));
+      background: linear-gradient(90deg, var(--accent, var(--accent-purple)), rgba(207, 184, 255, 0.62));
     }
 
     .card-main {
@@ -467,7 +485,7 @@
       padding: 10px;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.38);
-      border: 1px solid rgba(232, 228, 255, 0.08);
+      border: 1px solid rgba(207, 184, 255, 0.1);
     }
 
     .service-option + .service-option,
@@ -510,9 +528,9 @@
       width: 100%;
       min-width: 0;
       padding: 10px 12px;
-      border: 1px solid rgba(242, 214, 138, 0.32);
+      border: 1px solid rgba(240, 215, 161, 0.34);
       border-radius: var(--radius);
-      background: rgba(242, 214, 138, 0.1);
+      background: rgba(240, 215, 161, 0.11);
       text-align: left;
     }
 
@@ -565,7 +583,7 @@
       padding: 7px 10px;
       border-radius: 6px;
       background: var(--row);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(207, 184, 255, 0.07);
     }
 
     .arrival-destination > span,
@@ -1048,7 +1066,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.11.1028";
+    const BUILD_VERSION = "v2026.10.11.1038";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
