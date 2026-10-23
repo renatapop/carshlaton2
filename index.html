@@ -8,34 +8,34 @@
   <meta http-equiv="Expires" content="0">
   <title>Carshalton Departures</title>
   <meta name="description" content="A tablet-friendly Carshalton departures board draft.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23fbfbfa'/%3E%3Cpath d='M17 16h30a5 5 0 0 1 5 5v19a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V21a5 5 0 0 1 5-5Z' fill='%23040457'/%3E%3Cpath d='M20 23h24v6H20zM20 34h13v5H20zM38 34h6v5h-6z' fill='%23fbfbfa'/%3E%3Cpath d='M22 48l-5 8M42 48l5 8' stroke='%23040457' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f3eadf'/%3E%3Cpath d='M17 16h30a5 5 0 0 1 5 5v19a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V21a5 5 0 0 1 5-5Z' fill='%2318263d'/%3E%3Cpath d='M20 23h24v6H20zM20 34h13v5H20zM38 34h6v5h-6z' fill='%23f3eadf'/%3E%3Cpath d='M22 48l-5 8M42 48l5 8' stroke='%2318263d' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --bg: #090012;
-      --panel: rgba(18, 12, 30, 0.82);
-      --panel-soft: rgba(32, 22, 48, 0.82);
-      --row: rgba(16, 10, 28, 0.78);
-      --line: rgba(207, 184, 255, 0.12);
-      --line-strong: rgba(207, 184, 255, 0.22);
-      --text: #fbf8ff;
-      --muted: #aaa0bd;
-      --dim: #756b87;
-      --blue: #040457;
-      --blue-strong: #040457;
-      --blue-soft: #8fb5c8;
-      --accent-purple: #a35cff;
-      --accent-blue: #9d8cff;
-      --board-blue: #b8a7ff;
-      --board-amber: #f0d7a1;
+      --bg: #080f1d;
+      --panel: rgba(12, 22, 39, 0.82);
+      --panel-soft: rgba(20, 33, 52, 0.82);
+      --row: rgba(8, 16, 30, 0.78);
+      --line: rgba(221, 205, 184, 0.12);
+      --line-strong: rgba(221, 205, 184, 0.22);
+      --text: #f3eadf;
+      --muted: #c3b7a8;
+      --dim: #a99d90;
+      --blue: #18263d;
+      --blue-strong: #18263d;
+      --blue-soft: #a6b5c6;
+      --accent-purple: #cfb99b;
+      --accent-blue: #a6b5c6;
+      --board-blue: #d9c7ae;
+      --board-amber: #e7d4b9;
       --green: #3e8266;
       --red: #e86f75;
-      --ink: #f7fbff;
+      --ink: #f3eadf;
       --radius: 8px;
-      --shadow: 0 18px 46px rgba(0, 0, 0, 0.34), 0 0 34px rgba(116, 56, 180, 0.08);
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.34), 0 0 34px rgba(12, 20, 34, 0.12);
       --display-font: "Barlow Condensed", "Arial Narrow", "Helvetica Neue Condensed", ui-sans-serif, system-ui, sans-serif;
       --body-font: Inter, Avenir Next, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     }
@@ -53,14 +53,19 @@
       margin: 0;
       color: var(--text);
       background:
-        radial-gradient(ellipse at 50% 34%, rgba(166, 86, 255, 0.28) 0%, rgba(112, 55, 174, 0.13) 22%, transparent 52%),
-        linear-gradient(180deg, #090012 0%, #0c0416 36%, #07040d 100%);
+        radial-gradient(ellipse at 50% 12%, rgba(38, 57, 87, 0.12) 0%, transparent 58%),
+        linear-gradient(180deg, #0c1629 0%, #080f1e 44%, #060c18 100%);
       font-family: var(--body-font);
       letter-spacing: 0;
     }
 
     button {
       font: inherit;
+    }
+
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--board-amber);
+      outline-offset: 4px;
     }
 
     .app {
@@ -80,8 +85,8 @@
       inset: 0;
       pointer-events: none;
       background:
-        linear-gradient(rgba(207, 184, 255, 0.045) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(207, 184, 255, 0.035) 1px, transparent 1px);
+        linear-gradient(rgba(221, 205, 184, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(221, 205, 184, 0.035) 1px, transparent 1px);
       background-size: 72px 72px;
       mask-image: linear-gradient(180deg, transparent 0%, black 16%, black 56%, transparent 100%);
       opacity: 0.35;
@@ -178,7 +183,7 @@
       border: 1px solid var(--line-strong);
       border-radius: 999px;
       color: var(--text);
-      background: rgba(163, 92, 255, 0.18);
+      background: rgba(221, 205, 184, 0.12);
       box-shadow: none;
       cursor: pointer;
       font-family: var(--display-font);
@@ -189,8 +194,8 @@
     }
 
     .refresh-button:hover {
-      border-color: rgba(207, 184, 255, 0.42);
-      background: rgba(163, 92, 255, 0.26);
+      border-color: rgba(221, 205, 184, 0.42);
+      background: rgba(221, 205, 184, 0.20);
       transform: translateY(-1px);
     }
 
@@ -231,9 +236,9 @@
     }
 
     .switcher button[aria-selected="true"] {
-      color: var(--text);
-      background: rgba(163, 92, 255, 0.34);
-      box-shadow: inset 0 0 0 1px rgba(232, 228, 255, 0.1);
+      color: var(--blue-strong);
+      background: #ddcdb8;
+      box-shadow: inset 0 0 0 1px rgba(243, 234, 223, 0.1);
     }
 
     .view {
@@ -283,7 +288,7 @@
       padding: 8px 10px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(18, 12, 30, 0.72);
+      background: rgba(12, 22, 39, 0.72);
       color: var(--text);
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
       font-size: clamp(0.9rem, 1.7vw, 1rem);
@@ -326,7 +331,7 @@
 
     .notice.muted {
       color: var(--muted);
-      background: rgba(18, 12, 30, 0.62);
+      background: rgba(12, 22, 39, 0.62);
     }
 
     .notice.is-hidden {
@@ -390,7 +395,7 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background:
-        linear-gradient(180deg, rgba(207, 184, 255, 0.035), transparent 44%),
+        linear-gradient(180deg, rgba(221, 205, 184, 0.035), transparent 44%),
         var(--panel);
       box-shadow: var(--shadow);
     }
@@ -401,7 +406,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 4px;
-      background: linear-gradient(90deg, var(--accent, var(--accent-purple)), rgba(207, 184, 255, 0.62));
+      background: linear-gradient(90deg, var(--accent, var(--accent-purple)), rgba(221, 205, 184, 0.62));
     }
 
     .card-main {
@@ -485,7 +490,7 @@
       padding: 10px;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.38);
-      border: 1px solid rgba(207, 184, 255, 0.1);
+      border: 1px solid rgba(221, 205, 184, 0.1);
     }
 
     .service-option + .service-option,
@@ -528,9 +533,9 @@
       width: 100%;
       min-width: 0;
       padding: 10px 12px;
-      border: 1px solid rgba(240, 215, 161, 0.34);
+      border: 1px solid rgba(231, 212, 185, 0.34);
       border-radius: var(--radius);
-      background: rgba(240, 215, 161, 0.11);
+      background: rgba(231, 212, 185, 0.11);
       text-align: left;
     }
 
@@ -583,7 +588,7 @@
       padding: 7px 10px;
       border-radius: 6px;
       background: var(--row);
-      border: 1px solid rgba(207, 184, 255, 0.07);
+      border: 1px solid rgba(221, 205, 184, 0.07);
     }
 
     .arrival-destination > span,
@@ -611,6 +616,18 @@
       font-size: 0.78rem;
       color: var(--muted, #b9c3d0);
       line-height: 1.4;
+    }
+
+    .return-carriage-tip {
+      display: block;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .return-carriage-tip a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     .tube-note {
@@ -729,7 +746,7 @@
       padding: 7px 8px;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(232, 228, 255, 0.08);
+      border: 1px solid rgba(243, 234, 223, 0.08);
     }
 
     .journey-boarding-row strong {
@@ -785,7 +802,7 @@
       justify-content: space-between;
       gap: 18px;
       padding: 7px 9px;
-      border: 1px solid rgba(232, 228, 255, 0.1);
+      border: 1px solid rgba(243, 234, 223, 0.1);
       border-radius: 6px;
       background: var(--panel-soft);
       text-align: left;
@@ -1072,7 +1089,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.22.1";
+    const BUILD_VERSION = "v2026.10.23.3";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -2060,6 +2077,35 @@
         : boardStateMarkup("Loading live departures", "Checking Rail Data before showing any trains.", true);
     }
 
+    // Reviewed 23 October 2026. Positions refer to the arriving Tube's direction.
+    // Balham: First Out explicitly identifies the mainline-station exit.
+    // Elephant: First Out gives only the usual way out, not a verified rail transfer.
+    // Farringdon: approximate middle inferred from National Rail's platform plan;
+    // do not claim a precise carriage/door or a measured fastest transfer.
+    function returnCarriageMarkup(station) {
+      const tips = {
+        "Balham": {
+          text: "Northern southbound: front → National Rail exit",
+          source: "https://firstout.app/#station/balham",
+          label: "First Out"
+        },
+        "Elephant & Castle": {
+          text: "Northern southbound: rear suggested for usual way out. Rail transfer position unconfirmed; check station access.",
+          source: "https://firstout.app/#station/elephant-and-castle",
+          label: "First Out",
+          access: "https://tfl.gov.uk/tube/stop/940GZZLUEAC/elephant-castle-underground-station/"
+        },
+        "Farringdon": {
+          text: "Circle / H&C / Metropolitan, either direction: around the middle → Thameslink platform 3. Approximate, based on station plan; follow signs and departure boards.",
+          source: "https://www.nationalrail.co.uk/stations/farringdon/",
+          label: "National Rail station plan"
+        }
+      };
+      const tip = tips[station];
+      if (!tip) return "";
+      return `<span class="carriage-tip return-carriage-tip">${tip.text} <a href="${tip.source}" target="_blank" rel="noopener noreferrer">${tip.label}</a>${tip.access ? ` · <a href="${tip.access}" target="_blank" rel="noopener noreferrer">TfL access updates</a>` : ""}</span>`;
+    }
+
     function renderBack(now) {
       if (boardState === "error" && !hasLiveData("back")) {
         els.backCards.innerHTML = boardStateMarkup("Live data paused", "Rail Data is unavailable right now. Retrying shortly.");
@@ -2074,6 +2120,7 @@
                 <div class="boarding-station">
                   <strong>${boarding.station}</strong>
                   ${tubeMarkup(boarding.tube)}
+                  ${returnCarriageMarkup(boarding.station)}
                 </div>
                 <span class="return-time">${boarding.departureTime}</span>
                 <span class="pill ${statusClass(boarding.statusType)}">${boarding.platform ? boarding.statusLabel + " | " + boarding.platform : boarding.statusLabel}</span>
@@ -2099,6 +2146,7 @@
                 <div class="return-station">
                   <span class="mini-label">From</span>
                   <strong>${origin.station}</strong>
+                  ${returnCarriageMarkup(origin.station)}
                 </div>
                 <div class="return-mini">
                   <span class="mini-label">Departs</span>
