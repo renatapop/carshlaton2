@@ -607,6 +607,12 @@
       gap: 3px;
     }
 
+    .carriage-tip {
+      font-size: 0.78rem;
+      color: var(--muted, #b9c3d0);
+      line-height: 1.4;
+    }
+
     .tube-note {
       --tube: var(--board-blue);
       display: inline-flex;
@@ -1066,7 +1072,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.11.1038";
+    const BUILD_VERSION = "v2026.10.22.1";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -2010,6 +2016,7 @@
                 <div class="arrival-destination">
                   <span>${arrival.name}</span>
                   ${tubeMarkup(arrival.tube)}
+                  ${arrival.name === "Balham" ? '<span class="carriage-tip">Front of train → Northern line</span>' : arrival.name === "St Pancras" ? '<span class="carriage-tip">Middle of train → Tube</span>' : ""}
                 </div>
                 <span class="arrival-time">${arrival.time}</span>
               </div>
