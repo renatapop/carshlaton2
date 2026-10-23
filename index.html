@@ -624,12 +624,6 @@
       overflow-wrap: anywhere;
     }
 
-    .return-carriage-tip a {
-      color: inherit;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
     .tube-note {
       --tube: var(--board-blue);
       display: inline-flex;
@@ -1089,7 +1083,7 @@
 
   <script>
     const WALK_MINUTES = 10;
-    const BUILD_VERSION = "v2026.10.23.3";
+    const BUILD_VERSION = "v2026.10.23.4";
     const REFRESH_SECONDS = 60;
     const CACHE_TTL_MS = 0;
     const RAIL_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -2077,33 +2071,12 @@
         : boardStateMarkup("Loading live departures", "Checking Rail Data before showing any trains.", true);
     }
 
-    // Reviewed 23 October 2026. Positions refer to the arriving Tube's direction.
-    // Balham: First Out explicitly identifies the mainline-station exit.
-    // Elephant: First Out gives only the usual way out, not a verified rail transfer.
-    // Farringdon: approximate middle inferred from National Rail's platform plan;
-    // do not claim a precise carriage/door or a measured fastest transfer.
+    // Northern southbound at Balham: mainline-station exit is at the front.
+    // Source checked 23 October 2026: https://firstout.app/#station/balham
+    // Omit other return tips until a precise interchange position is confirmed.
     function returnCarriageMarkup(station) {
-      const tips = {
-        "Balham": {
-          text: "Northern southbound: front → National Rail exit",
-          source: "https://firstout.app/#station/balham",
-          label: "First Out"
-        },
-        "Elephant & Castle": {
-          text: "Northern southbound: rear suggested for usual way out. Rail transfer position unconfirmed; check station access.",
-          source: "https://firstout.app/#station/elephant-and-castle",
-          label: "First Out",
-          access: "https://tfl.gov.uk/tube/stop/940GZZLUEAC/elephant-castle-underground-station/"
-        },
-        "Farringdon": {
-          text: "Circle / H&C / Metropolitan, either direction: around the middle → Thameslink platform 3. Approximate, based on station plan; follow signs and departure boards.",
-          source: "https://www.nationalrail.co.uk/stations/farringdon/",
-          label: "National Rail station plan"
-        }
-      };
-      const tip = tips[station];
-      if (!tip) return "";
-      return `<span class="carriage-tip return-carriage-tip">${tip.text} <a href="${tip.source}" target="_blank" rel="noopener noreferrer">${tip.label}</a>${tip.access ? ` · <a href="${tip.access}" target="_blank" rel="noopener noreferrer">TfL access updates</a>` : ""}</span>`;
+      if (station !== "Balham") return "";
+      return '<span class="carriage-tip return-carriage-tip">Northern southbound: front → National Rail</span>';
     }
 
     function renderBack(now) {
